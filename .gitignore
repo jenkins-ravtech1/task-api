@@ -33,3 +33,7 @@ tfplan
 # Keys / secrets
 *.pem
 *.key
+
+# Generated AWS inventory (holds account id + ARNs — see scripts/aws-resources.sh)
+aws-resources*.html
+.playwright-mcp/
