@@ -1,0 +1,52 @@
+# =============================================================================
+# CI — Continuous Integration (PRD §14.1)
+#
+# Runs on every push (any branch) and on pull requests targeting main. Its job
+# is to PROVE the code builds and the tests pass, on a clean machine, every time.
+#
+# Session 2 (v2-ci) ships the `build-test` job. Later sessions extend this file:
+#   * session 3 adds a `docker-build` job (once the Dockerfile exists),
+#   * session 5's LocalStack integration tests run here automatically because
+#     they use Testcontainers (Docker is available on GitHub's runners).
+# =============================================================================
+name: CI
+
+on:
+  push: # all branches — students see CI on their own feature branches too
+  pull_request:
+    branches: [main]
+
+# Cancel an in-progress run if the same ref is pushed again (saves minutes).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven # cache ~/.m2 keyed on the pom files
+
+      # -B = batch mode (no interactive prompts, cleaner logs).
+      # `verify` compiles, runs unit tests, and (from session 5) the LocalStack
+      # integration tests, then packages the shaded jar.
+      - name: Build and test
+        run: mvn -B verify
+
+      # Keep the JUnit XML so failures are inspectable from the run page.
+      - name: Upload test reports
+        if: always() # upload even when the build failed
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: "**/target/surefire-reports/*.xml"
+          if-no-files-found: ignore
