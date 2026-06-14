@@ -1,0 +1,81 @@
+# =============================================================================
+# Local full-stack environment (PRD §11).
+#
+# Brings up the Tasks API together with LocalStack — a single container that
+# emulates AWS services (DynamoDB, SQS, SNS, S3, Lambda) — so the whole system
+# can be run and explored on a laptop with NO AWS account.
+#
+# Usage (from the repository root):
+#     docker compose -f docker/docker-compose.yml up --build
+#
+# Then:  curl http://localhost:8080/health
+# =============================================================================
+
+# Explicit project name (otherwise Compose derives it from the "docker/" folder
+# and can collide with other projects on the same machine).
+name: tasks-api
+
+services:
+  # --- LocalStack: a fake AWS running on http://localhost:4566 ---------------
+  localstack:
+    image: localstack/localstack:3
+    ports:
+      - "4566:4566" # single "edge" port for all emulated AWS services
+    environment:
+      - SERVICES=dynamodb,sqs,sns,s3,lambda
+      - DEBUG=0
+    volumes:
+      # Scripts in ready.d run once LocalStack is healthy — we use one to create
+      # the DynamoDB table, SQS queues and SNS topic (mirrors the Terraform setup).
+      - ../localstack/init:/etc/localstack/init/ready.d
+      # LocalStack runs Lambda functions by launching Docker containers, so it
+      # needs access to the host's Docker socket.
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # --- The Tasks API ---------------------------------------------------------
+  app:
+    build:
+      context: .. # repo root (see docker/Dockerfile and the root .dockerignore)
+      dockerfile: docker/Dockerfile
+    # Images target linux/amd64 — the architecture of the EC2 instance and the
+    # CI runner. On Apple-Silicon Macs this runs under emulation (a bit slower,
+    # but identical to what ships to AWS).
+    platform: linux/amd64
+    ports:
+      - "8080:8080"
+    environment:
+      # Session 3 runs the app in MEMORY mode: the DynamoDB/SQS code is added in
+      # session 5, which flips STORAGE to dynamodb and sets the queue/topic vars
+      # (the LocalStack resources they point at already exist, created on startup).
+      - STORAGE=memory
+      - APP_VERSION=local
+      - LOG_LEVEL=INFO
+      # AWS settings used from session 5 onward. AWS_ENDPOINT_URL is what makes
+      # the AWS SDK talk to LocalStack instead of real AWS. The dummy credentials
+      # are required by the SDK but ignored by LocalStack.
+      - AWS_REGION=eu-central-1
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - TASKS_TABLE=tasks
+      # - TASK_EVENTS_QUEUE_URL=http://localstack:4566/000000000000/task-events  # session 5
+      # - NOTIFICATIONS_TOPIC_ARN=arn:aws:sns:eu-central-1:000000000000:task-notifications  # session 5
+    depends_on:
+      localstack:
+        condition: service_healthy
+
+  # --- ADOT / X-Ray collector (session 8) ------------------------------------
+  # Distributed tracing is added in session 8. The collector exports spans to
+  # AWS X-Ray, which needs real AWS credentials, so it is left commented out for
+  # local runs and enabled (with config) when that session is reached.
+  #
+  # adot-collector:
+  #   image: amazon/aws-otel-collector:latest
+  #   command: ["--config=/etc/otel/config.yaml"]
+  #   volumes:
+  #     - ./otel-collector-config.yaml:/etc/otel/config.yaml

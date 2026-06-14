@@ -50,3 +50,18 @@ jobs:
           name: test-reports
           path: "**/target/surefire-reports/*.xml"
           if-no-files-found: ignore
+
+  # Added in session 3: prove the Dockerfile builds. We do NOT push the image
+  # here — that is the CD pipeline's job (session 7). Building it in CI catches
+  # a broken Dockerfile before it ever reaches a deploy.
+  docker-build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build image (no push)
+        # Context is the repo root; the Dockerfile lives under docker/. Target
+        # linux/amd64 (the EC2 deploy architecture).
+        run: docker build --platform linux/amd64 -f docker/Dockerfile -t tasks-api:ci .

@@ -1,0 +1,38 @@
+# Docker build context excludes (PRD FR-DK-3).
+#
+# This file lives at the repo ROOT because the image is built with the root as
+# the build context (the multi-stage build needs the Maven sources). Keeping the
+# context small makes builds faster and avoids leaking local files into images.
+#
+# NOTE: do NOT ignore module directories (app/, lambda/) or the root pom.xml —
+# the Maven reactor needs them, even though the app image only builds `app`.
+
+# Build output
+**/target/
+
+# Version control
+.git/
+.gitignore
+
+# Infrastructure & CI (not needed to build the app image)
+infra/
+.github/
+
+# Docs and local scripts
+docs/
+scripts/
+*.md
+
+# Local AWS emulation assets
+localstack/
+
+# Editors / OS cruft
+.vscode/
+.idea/
+.DS_Store
+
+# Secrets / env
+.env
+.env.*
+*.pem
+*.key

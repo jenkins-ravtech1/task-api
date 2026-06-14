@@ -6,7 +6,12 @@
 # =============================================================================
 
 .DEFAULT_GOAL := help
-.PHONY: help build test run clean
+.PHONY: help build test run clean image compose-up compose-down
+
+# Images target the EC2/CI architecture (linux/amd64).
+PLATFORM := linux/amd64
+IMAGE := tasks-api:local
+COMPOSE := docker compose -f docker/docker-compose.yml
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -25,3 +30,12 @@ run: build ## Build then run the API locally in memory mode (http://localhost:80
 
 clean: ## Remove build output (target/)
 	mvn -q clean
+
+image: ## Build the Docker image (linux/amd64)
+	docker build --platform $(PLATFORM) -f docker/Dockerfile -t $(IMAGE) .
+
+compose-up: ## Run the full local stack (app + LocalStack) in the foreground
+	$(COMPOSE) up --build
+
+compose-down: ## Stop the local stack and remove its containers/volumes
+	$(COMPOSE) down -v
