@@ -6,12 +6,14 @@
 # =============================================================================
 
 .DEFAULT_GOAL := help
-.PHONY: help build test run clean image compose-up compose-down
+.PHONY: help build test run clean image compose-up compose-down \
+        ecr-push tf-init tf-plan tf-apply destroy
 
 # Images target the EC2/CI architecture (linux/amd64).
 PLATFORM := linux/amd64
 IMAGE := tasks-api:local
 COMPOSE := docker compose -f docker/docker-compose.yml
+AWS_REGION ?= eu-central-1
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -41,3 +43,28 @@ compose-up: ## Run the full local stack (app + LocalStack) in the foreground
 
 compose-down: ## Stop the local stack and remove its containers/volumes
 	$(COMPOSE) down -v
+
+# --- AWS (require credentials + a terraform-applied stack) -------------------
+
+ecr-push: image ## Build & push the image to ECR, tagged with the git SHA + latest (manual deploy; CD automates this)
+	@ECR_URL=$$(terraform -chdir=infra output -raw ecr_repository_url); \
+	TAG=$$(git rev-parse --short HEAD); \
+	REGISTRY=$${ECR_URL%%/*}; \
+	aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $$REGISTRY; \
+	docker tag $(IMAGE) $$ECR_URL:$$TAG; \
+	docker tag $(IMAGE) $$ECR_URL:latest; \
+	docker push $$ECR_URL:$$TAG; \
+	docker push $$ECR_URL:latest; \
+	echo "Pushed $$ECR_URL:$$TAG (and :latest)"
+
+tf-init: ## terraform init (pass -backend-config via runbook; see docs/runbook.md)
+	terraform -chdir=infra init
+
+tf-plan: ## terraform plan
+	terraform -chdir=infra plan
+
+tf-apply: ## terraform apply
+	terraform -chdir=infra apply
+
+destroy: ## Tear down ALL AWS resources (cost safety)
+	terraform -chdir=infra destroy
