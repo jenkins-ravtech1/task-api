@@ -7,6 +7,7 @@ import com.course.tasksapi.util.ApiException;
 import com.course.tasksapi.util.Http;
 import com.course.tasksapi.util.Json;
 import com.course.tasksapi.util.Logging;
+import com.course.tasksapi.util.Metrics;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -110,6 +111,9 @@ public class TasksHandler implements HttpHandler {
         } catch (Exception e) {
             Logging.warn("Failed to publish TASK_CREATED for task " + task.getId(), e);
         }
+
+        // Emit the TasksCreated custom metric (§15).
+        Metrics.emitTaskCreated();
 
         exchange.getResponseHeaders().set("Location", "/tasks/" + task.getId());
         Http.writeJson(exchange, 201, task);

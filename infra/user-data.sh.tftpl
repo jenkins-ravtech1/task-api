@@ -7,6 +7,12 @@
 # uses plain $VAR (no braces) on purpose. templatefile only expands the
 # dollar-brace form, so the named template vars are filled in here while the
 # deploy script's own shell variables are left untouched.
+#
+# This sets up:
+#   * Docker
+#   * an ADOT (OpenTelemetry) collector container that exports traces to X-Ray
+#   * the app container, run with the OTel Java agent and shipping logs to
+#     CloudWatch via the awslogs driver
 # =============================================================================
 set -euo pipefail
 exec > >(tee /var/log/user-data.log) 2>&1
@@ -26,16 +32,44 @@ APP_PORT=${app_port}
 TASKS_TABLE=${tasks_table}
 TASK_EVENTS_QUEUE_URL=${queue_url}
 NOTIFICATIONS_TOPIC_ARN=${topic_arn}
+APP_LOG_GROUP=${app_log_group}
 ENV
 
-# The deploy helper: read the desired image tag from SSM, log in to ECR, pull,
-# and (re)start the container. CD re-runs THIS SAME script via SSM RunCommand,
-# so "deploy a new version" = update the SSM param, then run this.
+# The deploy helper: ensures the tracing collector is running, reads the desired
+# image tag from SSM, logs in to ECR, pulls, and (re)starts the app container.
+# CD re-runs THIS SAME script via SSM RunCommand to deploy a new version.
 cat > /usr/local/bin/deploy-app.sh <<'SCRIPT'
 #!/usr/bin/env bash
 set -euo pipefail
 source /etc/tasks-api.env
 
+NET="tasksapi"
+docker network inspect "$NET" >/dev/null 2>&1 || docker network create "$NET"
+
+# --- ADOT (OpenTelemetry) collector: receives spans, exports to X-Ray ---
+cat > /etc/otel-collector-config.yaml <<CFG
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+exporters:
+  awsxray:
+    region: $AWS_REGION
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [awsxray]
+CFG
+
+docker rm -f otel-collector 2>/dev/null || true
+docker run -d --name otel-collector --restart unless-stopped --network "$NET" \
+  -v /etc/otel-collector-config.yaml:/etc/otel-config.yaml:ro \
+  public.ecr.aws/aws-observability/aws-otel-collector:latest \
+  --config /etc/otel-config.yaml
+
+# --- App container ---
 REGISTRY="$(echo "$ECR_REPO_URL" | cut -d/ -f1)"
 TAG="$(aws ssm get-parameter --name "$IMAGE_TAG_PARAM" --region "$AWS_REGION" --query 'Parameter.Value' --output text)"
 IMAGE="$ECR_REPO_URL:$TAG"
@@ -51,13 +85,25 @@ for i in $(seq 1 30); do
 done
 
 docker rm -f tasks-api 2>/dev/null || true
-docker run -d --name tasks-api --restart unless-stopped -p "$APP_PORT:8080" \
+docker run -d --name tasks-api --restart unless-stopped --network "$NET" \
+  -p "$APP_PORT:8080" \
+  --log-driver awslogs \
+  --log-opt awslogs-region="$AWS_REGION" \
+  --log-opt awslogs-group="$APP_LOG_GROUP" \
+  --log-opt awslogs-create-group=true \
   -e APP_VERSION="$TAG" \
   -e STORAGE=dynamodb \
   -e AWS_REGION="$AWS_REGION" \
   -e TASKS_TABLE="$TASKS_TABLE" \
   -e TASK_EVENTS_QUEUE_URL="$TASK_EVENTS_QUEUE_URL" \
   -e NOTIFICATIONS_TOPIC_ARN="$NOTIFICATIONS_TOPIC_ARN" \
+  -e JAVA_TOOL_OPTIONS="-javaagent:/opt/aws-opentelemetry-agent.jar" \
+  -e OTEL_TRACES_EXPORTER=otlp \
+  -e OTEL_METRICS_EXPORTER=none \
+  -e OTEL_LOGS_EXPORTER=none \
+  -e OTEL_EXPORTER_OTLP_ENDPOINT="http://otel-collector:4317" \
+  -e OTEL_PROPAGATORS=xray \
+  -e OTEL_RESOURCE_ATTRIBUTES="service.name=tasks-api" \
   "$IMAGE"
 SCRIPT
 chmod +x /usr/local/bin/deploy-app.sh

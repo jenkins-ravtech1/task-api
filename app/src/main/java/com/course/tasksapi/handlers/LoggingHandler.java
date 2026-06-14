@@ -3,6 +3,7 @@ package com.course.tasksapi.handlers;
 import com.course.tasksapi.util.ApiException;
 import com.course.tasksapi.util.Http;
 import com.course.tasksapi.util.Logging;
+import com.course.tasksapi.util.Metrics;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -72,7 +73,9 @@ public class LoggingHandler implements HttpHandler {
             safeWriteError(exchange, 500, "INTERNAL", "Internal server error");
         } finally {
             long durationMs = (System.nanoTime() - startNanos) / 1_000_000;
-            Logging.request(requestId, method, path, status, durationMs);
+            // One EMF line per request: it IS the structured request log (FR-4)
+            // AND emits the request-latency CloudWatch metric (§15).
+            Metrics.emitRequest(requestId, method, path, status, durationMs);
             exchange.close();
         }
     }

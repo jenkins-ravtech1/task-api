@@ -55,25 +55,8 @@ public final class Logging {
         log(Level.ERROR, message, fields, error);
     }
 
-    /**
-     * Emit the one structured line that summarizes a finished HTTP request.
-     * Level escalates with status so 5xx lines are easy to alarm/search on.
-     */
-    public static void request(String requestId, String method, String path, int status, long durationMs) {
-        Level level = status >= 500 ? Level.ERROR : (status >= 400 ? Level.WARN : Level.INFO);
-        if (level.ordinal() < threshold.ordinal()) {
-            return;
-        }
-        Map<String, Object> line = new LinkedHashMap<>();
-        line.put("ts", Instant.now().toString());
-        line.put("level", level.name());
-        line.put("requestId", requestId);
-        line.put("method", method);
-        line.put("path", path);
-        line.put("status", status);
-        line.put("durationMs", durationMs);
-        System.out.println(Json.toJson(line));
-    }
+    // The per-request summary line is emitted by Metrics.emitRequest (EMF), so it
+    // doubles as a CloudWatch metric — see com.course.tasksapi.util.Metrics.
 
     // --- core ---------------------------------------------------------------
 

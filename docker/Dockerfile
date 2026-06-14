@@ -34,6 +34,13 @@ WORKDIR /app
 # The shaded (fat) jar carries its version in its name, so the glob resolves it.
 COPY --from=build /src/app/target/*-shaded.jar app.jar
 
+# OpenTelemetry / ADOT Java agent for X-Ray tracing (session 8). It is only
+# ACTIVATED in the EC2 deployment (via JAVA_TOOL_OPTIONS=-javaagent), so it adds
+# zero overhead to local runs. Baked in here so the image is self-contained.
+ARG ADOT_AGENT_VERSION=2.28.1
+RUN curl -fsSL -o /opt/aws-opentelemetry-agent.jar \
+    "https://github.com/aws-observability/aws-otel-java-instrumentation/releases/download/v${ADOT_AGENT_VERSION}/aws-opentelemetry-agent.jar"
+
 # Image metadata (FR-DK-4). CI/CD passes these; they default to dev locally.
 ARG APP_VERSION=dev
 ARG GIT_COMMIT=unknown

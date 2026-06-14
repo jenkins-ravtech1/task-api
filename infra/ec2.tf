@@ -35,9 +35,13 @@ resource "aws_instance" "app" {
   iam_instance_profile   = aws_iam_instance_profile.instance.name
 
   # Require IMDSv2 (token-based metadata) — a basic, free security hardening.
+  # hop_limit = 2 so the Docker CONTAINERS on this host can still reach the
+  # instance metadata service to get the instance-role credentials (they're one
+  # network hop away; the default limit of 1 would block them).
   metadata_options {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
   }
 
   user_data = templatefile("${path.module}/user-data.sh.tftpl", {
@@ -48,6 +52,7 @@ resource "aws_instance" "app" {
     tasks_table     = local.tasks_table
     queue_url       = local.queue_url
     topic_arn       = local.topic_arn
+    app_log_group   = local.app_log_group
   })
 
   # Re-run user-data (i.e. replace the instance) when the script changes.
