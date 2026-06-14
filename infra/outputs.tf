@@ -28,6 +28,16 @@ output "tasks_table_name" {
   value       = local.tasks_table
 }
 
+output "queue_url" {
+  description = "SQS task-events queue URL."
+  value       = aws_sqs_queue.events.url
+}
+
+output "topic_arn" {
+  description = "SNS notifications topic ARN."
+  value       = aws_sns_topic.notifications.arn
+}
+
 output "image_tag_parameter" {
   description = "SSM parameter that holds the image tag to run."
   value       = local.image_tag_param

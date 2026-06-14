@@ -37,6 +37,18 @@
       <artifactId>aws-lambda-java-events</artifactId>
     </dependency>
 
+    <!-- Parse the JSON event body. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+
+    <!-- Publish notifications to SNS (version from the AWS SDK BOM). -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sns</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>

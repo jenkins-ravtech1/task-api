@@ -17,10 +17,7 @@ public final class Publishers {
     public static EventPublisher create(Config cfg) {
         String queueUrl = cfg.taskEventsQueueUrl();
         if (queueUrl != null && !queueUrl.isBlank()) {
-            // Replaced in session 5 with: return new SqsEventPublisher(cfg);
-            throw new UnsupportedOperationException(
-                    "SQS event publishing is introduced in session 5. "
-                            + "Unset TASK_EVENTS_QUEUE_URL to run in no-op mode for now.");
+            return new SqsEventPublisher(cfg);
         }
         return new NoOpEventPublisher();
     }

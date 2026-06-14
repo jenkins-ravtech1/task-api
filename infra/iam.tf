@@ -122,10 +122,20 @@ data "aws_iam_policy_document" "deploy" {
     actions   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:PutParameter"]
     resources = ["arn:aws:ssm:${local.region}:${local.account_id}:parameter${local.image_tag_param}"]
   }
+  # SendCommand is a WRITE action, so scope it tightly to our instance and the
+  # shell-script document only.
   statement {
-    sid = "SsmRunCommand"
+    sid     = "SsmSendCommand"
+    actions = ["ssm:SendCommand"]
+    resources = [
+      aws_instance.app.arn,
+      "arn:aws:ssm:${local.region}::document/AWS-RunShellScript",
+    ]
+  }
+  # The result/listing calls are read-only; AWS requires "*" for them.
+  statement {
+    sid = "SsmReadCommands"
     actions = [
-      "ssm:SendCommand",
       "ssm:GetCommandInvocation",
       "ssm:ListCommandInvocations",
       "ssm:ListCommands",
@@ -154,45 +164,61 @@ data "aws_iam_policy_document" "deploy" {
     resources = ["*"]
   }
 
-  # --- IAM: manage only THIS project's roles/policies/profiles + the OIDC provider ---
+  # --- IAM (read): Terraform must REFRESH every project role/profile (including
+  #     the deploy role itself) to detect drift, so reads cover all of them. ---
   statement {
-    sid = "IamManageProject"
+    sid = "IamReadProject"
     actions = [
       "iam:GetRole",
-      "iam:CreateRole",
-      "iam:DeleteRole",
-      "iam:UpdateRole",
-      "iam:TagRole",
+      "iam:GetRolePolicy",
       "iam:ListRolePolicies",
       "iam:ListAttachedRolePolicies",
-      "iam:GetRolePolicy",
-      "iam:PutRolePolicy",
-      "iam:DeleteRolePolicy",
-      "iam:AttachRolePolicy",
-      "iam:DetachRolePolicy",
       "iam:GetInstanceProfile",
-      "iam:CreateInstanceProfile",
-      "iam:DeleteInstanceProfile",
-      "iam:AddRoleToInstanceProfile",
-      "iam:RemoveRoleFromInstanceProfile",
       "iam:ListInstanceProfilesForRole",
+      "iam:GetOpenIDConnectProvider",
     ]
     resources = [
       "arn:aws:iam::${local.account_id}:role/${var.project_name}-*",
       "arn:aws:iam::${local.account_id}:instance-profile/${var.project_name}-*",
+      "arn:aws:iam::${local.account_id}:oidc-provider/token.actions.githubusercontent.com",
     ]
   }
+
+  # --- IAM (write): scoped to the INSTANCE and LAMBDA roles ONLY. The deploy
+  #     role is deliberately excluded so a compromised CD run cannot widen its
+  #     own permissions (privilege-escalation guard). Consequence: changes to the
+  #     deploy role itself must be applied locally by an admin (see runbook). ---
   statement {
-    sid       = "IamOidcProvider"
-    actions   = ["iam:GetOpenIDConnectProvider", "iam:CreateOpenIDConnectProvider", "iam:TagOpenIDConnectProvider"]
-    resources = ["arn:aws:iam::${local.account_id}:oidc-provider/token.actions.githubusercontent.com"]
+    sid = "IamWriteWorkloadRoles"
+    actions = [
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:UpdateRole",
+      "iam:TagRole",
+      "iam:PutRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:CreateInstanceProfile",
+      "iam:DeleteInstanceProfile",
+      "iam:AddRoleToInstanceProfile",
+      "iam:RemoveRoleFromInstanceProfile",
+    ]
+    resources = [
+      "arn:aws:iam::${local.account_id}:role/${var.project_name}-instance",
+      "arn:aws:iam::${local.account_id}:role/${var.project_name}-lambda",
+      "arn:aws:iam::${local.account_id}:instance-profile/${var.project_name}-*",
+    ]
   }
 
-  # --- Pass the instance/lambda roles to the services that use them ---
+  # --- Pass ONLY the workload roles (instance, lambda) — never the deploy role. ---
   statement {
-    sid       = "PassProjectRoles"
-    actions   = ["iam:PassRole"]
-    resources = ["arn:aws:iam::${local.account_id}:role/${var.project_name}-*"]
+    sid     = "PassWorkloadRoles"
+    actions = ["iam:PassRole"]
+    resources = [
+      "arn:aws:iam::${local.account_id}:role/${var.project_name}-instance",
+      "arn:aws:iam::${local.account_id}:role/${var.project_name}-lambda",
+    ]
   }
 }
 

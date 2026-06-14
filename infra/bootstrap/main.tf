@@ -74,6 +74,32 @@ resource "aws_s3_bucket_public_access_block" "state" {
   restrict_public_buckets = true
 }
 
+# Refuse any non-TLS (plain HTTP) access to the state bucket. State can contain
+# sensitive values, so it must only ever be read/written over HTTPS.
+resource "aws_s3_bucket_policy" "state_tls_only" {
+  bucket = aws_s3_bucket.state.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "DenyInsecureTransport"
+      Effect    = "Deny"
+      Principal = "*"
+      Action    = "s3:*"
+      Resource = [
+        aws_s3_bucket.state.arn,
+        "${aws_s3_bucket.state.arn}/*",
+      ]
+      Condition = {
+        Bool = { "aws:SecureTransport" = "false" }
+      }
+    }]
+  })
+
+  # The public access block must be in place before we attach a bucket policy.
+  depends_on = [aws_s3_bucket_public_access_block.state]
+}
+
 # Lock table prevents two `terraform apply` runs from clobbering each other.
 resource "aws_dynamodb_table" "lock" {
   name         = "${var.project_name}-tflock"

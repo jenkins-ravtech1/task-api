@@ -24,9 +24,7 @@ public final class Repositories {
             case "memory":
                 return new InMemoryTaskRepository();
             case "dynamodb":
-                // Replaced in session 5 with: return new DynamoDbTaskRepository(cfg);
-                throw new UnsupportedOperationException(
-                        "STORAGE=dynamodb is introduced in session 5. Use STORAGE=memory for now.");
+                return new DynamoDbTaskRepository(cfg);
             default:
                 throw new IllegalArgumentException(
                         "Unknown STORAGE value: '" + storage + "' (expected 'memory' or 'dynamodb')");

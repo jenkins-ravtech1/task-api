@@ -35,6 +35,8 @@ image: ## Build the Docker image (linux/amd64)
 	docker build --platform $(PLATFORM) -f docker/Dockerfile -t $(IMAGE) .
 
 compose-up: ## Run the full local stack (app + LocalStack) in the foreground
+	@# Build the lambda jar on the host first so LocalStack can deploy it.
+	mvn -q -pl lambda -am package -DskipTests
 	$(COMPOSE) up --build
 
 compose-down: ## Stop the local stack and remove its containers/volumes

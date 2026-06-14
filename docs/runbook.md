@@ -48,6 +48,11 @@ There is a deliberate chicken-and-egg the first time:
    only becomes healthy after the first image is pushed — which the CD pipeline
    does (session 7), or you can do manually (below). This is expected; the
    instance is not "broken" while it waits.
+3. **The deploy role cannot modify itself (privilege-escalation guard).** Its
+   IAM write permissions are scoped to the instance/lambda roles only, never
+   `*-deploy`. So any change to the deploy role's own permissions must be applied
+   **locally by an admin**, not by CD. (CD can still read the deploy role for
+   drift detection.)
 
 ### OIDC subject note
 

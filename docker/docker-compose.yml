@@ -24,10 +24,20 @@ services:
     environment:
       - SERVICES=dynamodb,sqs,sns,s3,lambda
       - DEBUG=0
+      # Make SQS queue URLs path-style (http://localstack:4566/000.../task-events)
+      # so the app container can reach them by the compose service name.
+      - SQS_ENDPOINT_STRATEGY=path
+      # Attach LocalStack-spawned Lambda containers to THIS compose network so the
+      # Lambda can reach LocalStack (for SNS publish) at http://localstack:4566.
+      # The network name is "<project>_default" → "tasks-api_default".
+      - LAMBDA_DOCKER_NETWORK=tasks-api_default
     volumes:
-      # Scripts in ready.d run once LocalStack is healthy — we use one to create
-      # the DynamoDB table, SQS queues and SNS topic (mirrors the Terraform setup).
+      # Scripts in ready.d run once LocalStack is healthy — they create the table,
+      # queues and topic and (if the jar is present) deploy the Lambda + trigger.
       - ../localstack/init:/etc/localstack/init/ready.d
+      # The built lambda jar, so the init script can deploy it to LocalStack.
+      # Run `mvn -pl lambda -am package` first (the Makefile target does this).
+      - ../lambda/target:/opt/lambda:ro
       # LocalStack runs Lambda functions by launching Docker containers, so it
       # needs access to the host's Docker socket.
       - /var/run/docker.sock:/var/run/docker.sock
@@ -49,22 +59,21 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Session 3 runs the app in MEMORY mode: the DynamoDB/SQS code is added in
-      # session 5, which flips STORAGE to dynamodb and sets the queue/topic vars
-      # (the LocalStack resources they point at already exist, created on startup).
-      - STORAGE=memory
+      # From session 5 the app uses DynamoDB for storage and publishes task-created
+      # events to SQS. AWS_ENDPOINT_URL is what makes the AWS SDK talk to LocalStack
+      # instead of real AWS; the dummy credentials are required by the SDK but
+      # ignored by LocalStack. The table/queue/topic are created on startup by the
+      # init script.
+      - STORAGE=dynamodb
       - APP_VERSION=local
       - LOG_LEVEL=INFO
-      # AWS settings used from session 5 onward. AWS_ENDPOINT_URL is what makes
-      # the AWS SDK talk to LocalStack instead of real AWS. The dummy credentials
-      # are required by the SDK but ignored by LocalStack.
       - AWS_REGION=eu-central-1
       - AWS_ENDPOINT_URL=http://localstack:4566
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - TASKS_TABLE=tasks
-      # - TASK_EVENTS_QUEUE_URL=http://localstack:4566/000000000000/task-events  # session 5
-      # - NOTIFICATIONS_TOPIC_ARN=arn:aws:sns:eu-central-1:000000000000:task-notifications  # session 5
+      - TASK_EVENTS_QUEUE_URL=http://localstack:4566/000000000000/task-events
+      - NOTIFICATIONS_TOPIC_ARN=arn:aws:sns:eu-central-1:000000000000:task-notifications
     depends_on:
       localstack:
         condition: service_healthy
