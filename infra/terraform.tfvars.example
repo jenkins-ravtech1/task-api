@@ -1,0 +1,29 @@
+# Copy to terraform.tfvars and edit. terraform.tfvars is gitignored (it may hold
+# account-specific values). Pass the state backend settings to `terraform init`
+# separately (see docs/runbook.md), not here.
+
+project_name = "tasks-api"
+environment  = "production"
+aws_region   = "eu-central-1"
+
+# Your GitHub repo (org/repo) — scopes the OIDC deploy role to it.
+github_repo = "jenkins-ravtech1/task-api"
+
+instance_type = "t3.micro"
+
+# WARNING: 0.0.0.0/0 opens the app port to the whole internet. Restrict to your
+# IP/CIDR (e.g. "203.0.113.4/32") for anything beyond a quick demo.
+allowed_cidr = "0.0.0.0/0"
+
+# Set to receive SNS email notifications (you must confirm via email). Empty = off.
+notification_email = ""
+
+# CD overrides this with the git SHA; "latest" is fine for a first manual apply.
+image_tag = "latest"
+
+# Set to false if your AWS account ALREADY has the GitHub OIDC provider.
+create_oidc_provider = true
+
+# State backend names from `infra/bootstrap` (used to scope the deploy role).
+state_bucket = "tasks-api-tfstate-REPLACE_WITH_ACCOUNT_ID"
+lock_table   = "tasks-api-tflock"

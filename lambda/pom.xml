@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  LAMBDA MODULE — the SQS consumer
+  ============================================================================
+  This builds an "uber jar" (code + dependencies in one file) that is uploaded
+  to AWS Lambda. The function is triggered by messages on the task-events SQS
+  queue; for each one it logs and (from session 5) publishes an SNS notification.
+
+  Session 4 ships a minimal stub so the Terraform `lambda.tf` (session 5) has an
+  artifact to deploy. Session 5 fleshes out the handler.
+  ============================================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.course</groupId>
+    <artifactId>tasks-api-parent</artifactId>
+    <version>1.0.0</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>lambda</artifactId>
+  <name>Tasks Events (lambda)</name>
+
+  <dependencies>
+    <!-- The Lambda Java runtime: RequestHandler, Context, and the SQS event types. -->
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-lambda-java-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-lambda-java-events</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <!-- Output lambda.jar (no version in the name) so lambda.tf has a stable path. -->
+    <finalName>lambda</finalName>
+
+    <plugins>
+      <!-- Build the deployable uber jar. Unlike the app, a Lambda jar needs no
+           Main-Class; AWS invokes the handler method by reference. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <transformers>
+                <!-- Merge META-INF/services so the AWS SDK (added in session 5)
+                     can discover its providers inside the uber jar. -->
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

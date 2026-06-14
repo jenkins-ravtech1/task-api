@@ -37,6 +37,7 @@
   -->
   <modules>
     <module>app</module>
+    <module>lambda</module>
   </modules>
 
   <properties>
@@ -51,6 +52,11 @@
     <!-- Dependency versions (libraries) -->
     <jackson.version>2.18.2</jackson.version>
     <junit.version>5.11.4</junit.version>
+    <!-- AWS SDK v2 (BOM manages all aws-sdk module versions together) -->
+    <aws.sdk.version>2.29.52</aws.sdk.version>
+    <!-- AWS Lambda Java runtime libraries (not part of the SDK BOM) -->
+    <aws.lambda.core.version>1.2.3</aws.lambda.core.version>
+    <aws.lambda.events.version>3.14.0</aws.lambda.events.version>
 
     <!-- Plugin versions. Recent versions are required so they understand the
          JDK that runs Maven locally (which may be newer than 17). -->
@@ -80,6 +86,26 @@
         <version>${junit.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+      <!-- AWS SDK v2 BOM: pins versions for dynamodb, sqs, sns, etc. so the
+           app (session 5) and lambda modules stay in sync. -->
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${aws.sdk.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- Lambda runtime libraries (managed here, used by the lambda module). -->
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-lambda-java-core</artifactId>
+        <version>${aws.lambda.core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.amazonaws</groupId>
+        <artifactId>aws-lambda-java-events</artifactId>
+        <version>${aws.lambda.events.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

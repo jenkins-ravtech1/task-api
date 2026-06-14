@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# =============================================================================
+# EC2 user-data (runs once on first boot). Rendered by Terraform's templatefile,
+# which substitutes the dollar-brace placeholders below with real values.
+#
+# Design note: the inner "deploy-app.sh" is written with a QUOTED heredoc and
+# uses plain $VAR (no braces) on purpose. templatefile only expands the
+# dollar-brace form, so the named template vars are filled in here while the
+# deploy script's own shell variables are left untouched.
+# =============================================================================
+set -euo pipefail
+exec > >(tee /var/log/user-data.log) 2>&1
+
+echo "[user-data] installing Docker..."
+dnf install -y docker
+systemctl enable --now docker
+# (The SSM agent is preinstalled and running on Amazon Linux 2023 — that is how
+#  CD reaches this box, and how we get a shell via Session Manager. No SSH.)
+
+# Static configuration for the deploy helper, filled in by Terraform.
+cat > /etc/tasks-api.env <<ENV
+AWS_REGION=${aws_region}
+ECR_REPO_URL=${ecr_repo_url}
+IMAGE_TAG_PARAM=${image_tag_param}
+APP_PORT=${app_port}
+TASKS_TABLE=${tasks_table}
+TASK_EVENTS_QUEUE_URL=${queue_url}
+NOTIFICATIONS_TOPIC_ARN=${topic_arn}
+ENV
+
+# The deploy helper: read the desired image tag from SSM, log in to ECR, pull,
+# and (re)start the container. CD re-runs THIS SAME script via SSM RunCommand,
+# so "deploy a new version" = update the SSM param, then run this.
+cat > /usr/local/bin/deploy-app.sh <<'SCRIPT'
+#!/usr/bin/env bash
+set -euo pipefail
+source /etc/tasks-api.env
+
+REGISTRY="$(echo "$ECR_REPO_URL" | cut -d/ -f1)"
+TAG="$(aws ssm get-parameter --name "$IMAGE_TAG_PARAM" --region "$AWS_REGION" --query 'Parameter.Value' --output text)"
+IMAGE="$ECR_REPO_URL:$TAG"
+
+aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+
+# The very first terraform apply happens BEFORE any image is pushed, so the
+# instance may boot with an empty ECR. Wait (don't fail) for an image to appear.
+for i in $(seq 1 30); do
+  if docker pull "$IMAGE"; then break; fi
+  echo "[deploy] image $IMAGE not available yet; retry $i/30"
+  sleep 20
+done
+
+docker rm -f tasks-api 2>/dev/null || true
+docker run -d --name tasks-api --restart unless-stopped -p "$APP_PORT:8080" \
+  -e APP_VERSION="$TAG" \
+  -e STORAGE=dynamodb \
+  -e AWS_REGION="$AWS_REGION" \
+  -e TASKS_TABLE="$TASKS_TABLE" \
+  -e TASK_EVENTS_QUEUE_URL="$TASK_EVENTS_QUEUE_URL" \
+  -e NOTIFICATIONS_TOPIC_ARN="$NOTIFICATIONS_TOPIC_ARN" \
+  "$IMAGE"
+SCRIPT
+chmod +x /usr/local/bin/deploy-app.sh
+
+# Run the app under systemd so it restarts on reboot/crash.
+cat > /etc/systemd/system/tasks-api.service <<'UNIT'
+[Unit]
+Description=Tasks API container
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/deploy-app.sh
+ExecStop=/usr/bin/docker rm -f tasks-api
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+systemctl daemon-reload
+systemctl enable --now tasks-api.service
+echo "[user-data] done."
