@@ -102,6 +102,7 @@ docker run -d --name tasks-api --restart unless-stopped --network "$NET" \
   -e OTEL_METRICS_EXPORTER=none \
   -e OTEL_LOGS_EXPORTER=none \
   -e OTEL_EXPORTER_OTLP_ENDPOINT="http://otel-collector:4317" \
+  -e OTEL_EXPORTER_OTLP_PROTOCOL=grpc \
   -e OTEL_PROPAGATORS=xray \
   -e OTEL_RESOURCE_ATTRIBUTES="service.name=tasks-api" \
   "$IMAGE"
