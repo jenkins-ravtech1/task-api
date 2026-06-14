@@ -117,9 +117,12 @@ data "aws_iam_policy_document" "deploy" {
   }
 
   # --- Deploy: update the image-tag SSM parameter and run a command on the box ---
+  # ListTagsForResource is read-only but required: `terraform apply` refreshes the
+  # aws_ssm_parameter resource by reading its tags, so without it the CD plan fails
+  # with AccessDenied on ssm:ListTagsForResource before any change is applied.
   statement {
     sid       = "ImageTagParam"
-    actions   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:PutParameter"]
+    actions   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:PutParameter", "ssm:ListTagsForResource"]
     resources = ["arn:aws:ssm:${local.region}:${local.account_id}:parameter${local.image_tag_param}"]
   }
   # SendCommand is a WRITE action, so scope it tightly to our instance and the
