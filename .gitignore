@@ -14,3 +14,19 @@ yarn-error.log*
 # Editor
 .vscode/
 .idea/
+
+# Java / Maven
+target/
+*.class
+
+# Terraform — never commit state or real variable files (they hold secrets/IDs)
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!*.tfvars.example
+
+# Keys / secrets
+*.pem
+*.key

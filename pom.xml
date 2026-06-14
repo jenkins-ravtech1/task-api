@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  ROOT (PARENT) POM
+  ============================================================================
+  This is a Maven "multi-module" build. The parent pom does not produce a JAR
+  itself (packaging = pom); instead it ties together the child modules and is
+  the single place where we pin versions for dependencies and plugins.
+
+  Modules:
+    - app     : the Tasks API HTTP service (this is what students run first)
+    - lambda  : the SQS consumer Lambda (added in session 5 / milestone M4-M5)
+
+  Why pin everything here?
+    Reproducible builds. A beginner who clones this repo two months from now
+    must get the exact same versions we used. We therefore declare versions in
+    <properties> and manage them in <dependencyManagement> / <pluginManagement>.
+  ============================================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.course</groupId>
+  <artifactId>tasks-api-parent</artifactId>
+  <version>1.0.0</version>
+  <packaging>pom</packaging>
+
+  <name>Tasks API (parent)</name>
+  <description>Course reference implementation: a plain-Java Tasks API and its event-consumer Lambda.</description>
+
+  <!--
+    The child modules. We start with just "app". The "lambda" module is added
+    in milestone M4 when we introduce the event-driven flow. Keeping it out for
+    now keeps session 1 as small and readable as possible.
+  -->
+  <modules>
+    <module>app</module>
+  </modules>
+
+  <properties>
+    <!-- Compile for Java 17 (the course LTS) even if the local JDK is newer.
+         maven.compiler.release pins both the language level AND the target
+         bytecode, and validates that we only use Java 17 APIs. -->
+    <maven.compiler.release>17</maven.compiler.release>
+
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <!-- Dependency versions (libraries) -->
+    <jackson.version>2.18.2</jackson.version>
+    <junit.version>5.11.4</junit.version>
+
+    <!-- Plugin versions. Recent versions are required so they understand the
+         JDK that runs Maven locally (which may be newer than 17). -->
+    <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
+    <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
+  </properties>
+
+  <!--
+    dependencyManagement only declares versions; it does NOT add dependencies to
+    any module. Children opt in by listing the dependency without a <version>.
+    We import "BOM" (Bill of Materials) poms so a whole family of artifacts
+    (e.g. all Jackson modules) share one consistent version.
+  -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${jackson.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <!-- pluginManagement pins plugin versions for all modules without forcing
+         every module to run them. -->
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>${maven-shade-plugin.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>

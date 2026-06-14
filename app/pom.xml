@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  APP MODULE — the Tasks API HTTP service
+  ============================================================================
+  This module builds a single, self-contained ("fat" / "shaded") JAR that can
+  be run with `java -jar`. It has NO web framework: the HTTP layer is the JDK's
+  built-in com.sun.net.httpserver.HttpServer. The only runtime library is
+  Jackson (for JSON).
+  ============================================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.course</groupId>
+    <artifactId>tasks-api-parent</artifactId>
+    <version>1.0.0</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>app</artifactId>
+  <name>Tasks API (app)</name>
+
+  <dependencies>
+    <!-- JSON (de)serialization. jackson-databind pulls in core + annotations. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+
+    <!-- Tests: JUnit 5 (the "junit-jupiter" aggregator = api + engine + params) -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <!-- finalName controls the artifact base name, so we get app.jar and
+         app-shaded.jar instead of app-1.0.0[...]. This keeps the Dockerfile
+         and Makefile free of version numbers. -->
+    <finalName>app</finalName>
+
+    <plugins>
+      <!--
+        maven-shade-plugin bundles the app + all its dependencies into one
+        runnable JAR. Two settings matter a lot:
+          * shadedArtifactAttached=true  -> produce a SEPARATE file with a
+            classifier (app-shaded.jar) and leave the thin app.jar in place.
+          * shadedClassifierName=shaded  -> that classifier is literally
+            "shaded", which is what the Dockerfile's `*-shaded.jar` glob expects.
+        The ManifestResourceTransformer writes Main-Class so `java -jar` works.
+        The ServicesResourceTransformer merges META-INF/services files (needed
+        once the AWS SDK is added in session 5).
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>shaded</shadedClassifierName>
+              <!-- We ship an executable app, not a published library, so we don't
+                   need the trimmed "dependency-reduced-pom.xml" the plugin writes
+                   by default (it would otherwise clutter the repo root). -->
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>com.course.tasksapi.App</mainClass>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
