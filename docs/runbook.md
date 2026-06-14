@@ -54,6 +54,19 @@ There is a deliberate chicken-and-egg the first time:
    **locally by an admin**, not by CD. (CD can still read the deploy role for
    drift detection.)
 
+### Enable the CD pipeline (GitHub setup)
+
+`cd.yml` is ready, but two things live in GitHub settings (not in code):
+
+1. **Repository variables** (Settings → Secrets and variables → Actions →
+   Variables): `AWS_REGION`, `AWS_DEPLOY_ROLE_ARN` (the `deploy_role_arn`
+   output), `ECR_REPOSITORY`, `TF_STATE_BUCKET`, `TF_LOCK_TABLE`. Until these are
+   set, CD fails fast at the AWS-auth step (this is expected before setup).
+2. **The `production` environment** (Settings → Environments → New environment →
+   `production`) with a **required reviewer**. The job declares
+   `environment: production`, but the approval gate only exists once you create
+   the environment and add a reviewer — otherwise the job just runs unguarded.
+
 ### OIDC subject note
 
 The deploy role's trust policy allows two GitHub subjects:

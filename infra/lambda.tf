@@ -76,6 +76,11 @@ resource "aws_lambda_function" "events" {
   tracing_config {
     mode = "Active"
   }
+
+  # Ensure Terraform owns the log group (with our 14-day retention) before the
+  # function exists — otherwise Lambda would auto-create it on first invoke and a
+  # later apply could hit ResourceAlreadyExistsException.
+  depends_on = [aws_cloudwatch_log_group.lambda]
 }
 
 # --- Trigger: SQS → Lambda ---------------------------------------------------
