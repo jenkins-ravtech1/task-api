@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מפגש 1 · Code — יסודות והאפליקציה</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0f2e4d; --blue:#1F4E79; --blue2:#2E5496; --accent:#ff9900;
+    --bg:#0f1722; --stage:#eef2f7; --card:#ffffff; --ink:#1a2330; --muted:#5b6776; --line:#dfe6ee;
+    --simple:#0ea5b7; --tech:#6366f1; --demo:#16a34a; --lab:#ff9900; --hw:#7c3aed;
+    --code-bg:#0b2233; --code-ink:#e6f0fa;
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  html{direction:rtl}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); overflow:hidden;
+    font-family:"Heebo","Segoe UI","Arial",sans-serif; direction:rtl; text-align:right;
+  }
+  code,.en,kbd{direction:ltr; unicode-bidi:isolate;}
+  code{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace; font-size:.85em;
+       background:#eef3f9; color:#16324f; padding:.06em .42em; border-radius:6px; border:1px solid #dbe6f1;}
+  kbd{font-family:"JetBrains Mono",monospace; font-size:.8em; background:#1f2937; color:#e5e7eb;
+      border:1px solid #374151; border-bottom-width:2px; border-radius:6px; padding:1px 7px}
+
+  /* chrome */
+  .topbar{position:fixed; top:0; inset-inline:0; height:50px; z-index:30;
+    background:linear-gradient(90deg,var(--navy),var(--blue2)); color:#fff;
+    display:flex; align-items:center; gap:14px; padding:0 18px; box-shadow:0 2px 10px rgba(0,0,0,.25)}
+  .topbar .brand{font-weight:800; font-size:15px}
+  .topbar .sep{opacity:.5}
+  .topbar .topic{font-size:14px; opacity:.92; font-weight:500}
+  .topbar .spacer{flex:1}
+  .topbar button{background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.25);
+    border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer; font-family:inherit}
+  .topbar button:hover{background:rgba(255,255,255,.26)}
+  .pbar{position:fixed; top:50px; inset-inline:0; height:4px; background:#cdd7e2; z-index:30}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),#ffc46b); transition:width .25s}
+
+  .stage{position:fixed; top:54px; bottom:58px; inset-inline:0; overflow:hidden; background:var(--stage)}
+  .navbar{position:fixed; bottom:0; inset-inline:0; height:58px; z-index:30; background:#fff;
+    border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 18px}
+  .navbar .count{font-weight:700; color:var(--muted); font-size:14px; direction:ltr; unicode-bidi:isolate}
+  .navbar .hint{font-size:12.5px; color:#9aa6b2}
+  .navbar button{font-family:inherit; cursor:pointer; border-radius:10px; padding:9px 18px; font-size:15px; font-weight:700;
+    border:1px solid var(--line); background:#fff; color:var(--navy)}
+  .navbar button.primary{background:var(--navy); color:#fff; border-color:var(--navy)}
+  .navbar button:disabled{opacity:.4; cursor:default}
+
+  /* slides */
+  .slide{display:none; position:absolute; inset:0; padding:18px 22px}
+  .slide.active{display:flex; align-items:center; justify-content:center; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+  .s-wrap{max-width:1000px; width:100%; margin:0 auto; transform-origin:center center}
+  .kicker{display:inline-block; font-size:13px; font-weight:700; color:var(--accent);
+    text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px}
+  .slide h2{font-size:30px; font-weight:800; color:var(--navy); margin:0 0 14px; line-height:1.2}
+  .slide h3{font-size:20px; font-weight:800; color:var(--blue2); margin:18px 0 8px}
+  .slide p{font-size:17.5px; line-height:1.6; margin:0 0 12px}
+  .slide ul,.slide ol{font-size:17px; line-height:1.6; margin:8px 0; padding-inline-start:24px}
+  .slide li{margin:7px 0}
+  .lead{font-size:19px; color:#33414f}
+  .muted{color:var(--muted)}
+
+  /* cover + divider */
+  .cover{background:radial-gradient(1200px 500px at 80% -10%,#1c476f 0,transparent 60%),linear-gradient(135deg,var(--navy),var(--blue) 70%); color:#fff}
+  .cover .eyebrow{font-size:15px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; font-weight:700}
+  .cover h1{font-size:46px; line-height:1.12; margin:10px 0 8px; font-weight:900}
+  .cover h1 .accent{color:var(--accent)}
+  .cover .sub{font-size:20px; opacity:.95; max-width:760px}
+  .cover .pills{margin-top:22px; display:flex; flex-wrap:wrap; gap:10px}
+  .cover .pill{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:8px 16px; font-size:14.5px}
+  .divider{background:linear-gradient(135deg,#13243a,#22507e); color:#fff}
+  .divider .pnum{font-size:18px; font-weight:700; color:var(--accent); letter-spacing:.1em}
+  .divider h2{color:#fff; font-size:40px; margin:6px 0 10px}
+  .divider p{font-size:19px; opacity:.92; max-width:720px}
+
+  /* cards / boxes */
+  .grid{display:grid; gap:16px}
+  .two{grid-template-columns:1fr 1fr}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:0 4px 16px rgba(15,46,77,.06)}
+  .box{border-radius:14px; padding:16px 18px; border:1px solid var(--line)}
+  .box .bt{font-weight:800; font-size:14px; margin-bottom:8px; display:flex; align-items:center; gap:8px}
+  .box .bt::before{content:""; width:10px; height:10px; border-radius:50%}
+  .box.simple{background:#e7f8fb; border-color:#bde9f0}
+  .box.simple .bt{color:#0b7c8c} .box.simple .bt::before{background:var(--simple)}
+  .box.tech{background:#eef0fe; border-color:#d3d8fb}
+  .box.tech .bt{color:#4348c7} .box.tech .bt::before{background:var(--tech)}
+  .box.note{background:#f0f7ff; border-color:#cfe3fb}
+  .box.note .bt{color:var(--blue2)} .box.note .bt::before{background:var(--blue2)}
+  .box.warn{background:#fff4ed; border-color:#ffd9bf}
+  .box.warn .bt{color:#c2410c} .box.warn .bt::before{background:#ea580c}
+
+  /* demo / lab / hw */
+  .block{border-radius:var(--radius); padding:18px 20px; border:1px solid var(--line); background:#fff}
+  .block > .hd{display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; margin-bottom:6px}
+  .block .badge{font-size:12px; font-weight:800; color:#fff; padding:3px 10px; border-radius:999px}
+  .block.demo{border-inline-start:6px solid var(--demo); background:#f1faf3}
+  .block.demo .badge{background:var(--demo)} .block.demo .hd{color:#15803d}
+  .block.lab{border-inline-start:6px solid var(--lab); background:#fff8ee}
+  .block.lab .badge{background:var(--lab)} .block.lab .hd{color:#b45309}
+  .block.hw{border-inline-start:6px solid var(--hw); background:#f6f1fe}
+  .block.hw .badge{background:var(--hw)} .block.hw .hd{color:#6b21a8}
+  .steps{counter-reset:st; list-style:none; padding:0; margin:8px 0 0}
+  .steps > li{position:relative; padding:4px 40px 14px 0; margin:0}
+  .steps > li::before{counter-increment:st; content:counter(st); position:absolute; inset-inline-start:0; top:0;
+    width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff; font-weight:800; font-size:14px;
+    display:flex; align-items:center; justify-content:center}
+  .block.demo .steps>li::before{background:var(--demo)} .block.lab .steps>li::before{background:var(--lab)}
+  .block.hw .steps>li::before{background:var(--hw)}
+  .steps > li:not(:last-child){border-inline-start:2px dashed #d7dee7; margin-inline-start:13px}
+  .steps b{color:var(--navy)}
+
+  /* code */
+  pre{direction:ltr; text-align:left; background:var(--code-bg); color:var(--code-ink); border-radius:12px;
+    padding:14px 16px; overflow-x:auto; font-family:"JetBrains Mono",monospace; font-size:14px; line-height:1.55; margin:10px 0;
+    border:1px solid #143049}
+  pre .c{color:#7fa7c7}
+  pre .k{color:#ffb86c}
+  pre .s{color:#a5e6a5}
+  pre .o{color:#9fd0ff}
+  .filename{direction:ltr; text-align:left; font-family:"JetBrains Mono",monospace; font-size:12px; color:#9fb6cb;
+    background:#0b2233; border:1px solid #143049; border-bottom:0; border-radius:10px 10px 0 0; padding:6px 12px; margin:10px 0 -10px; display:inline-block}
+
+  /* tables */
+  table{width:100%; border-collapse:collapse; direction:rtl; background:#fff; border-radius:12px; overflow:hidden; margin:10px 0; font-size:16px}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:right; vertical-align:top}
+  th{background:var(--blue); color:#fff; font-weight:700}
+  tr:nth-child(even) td{background:#f4f8fc}
+  .agenda td.t{white-space:nowrap; font-weight:700; color:var(--blue2); direction:ltr; unicode-bidi:isolate; text-align:right; width:130px}
+
+  /* flow */
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; direction:ltr; justify-content:center; margin:14px 0}
+  .flow .n{background:#fff; border:2px solid var(--blue2); color:var(--navy); border-radius:10px; padding:8px 14px; font-weight:700; font-size:15px}
+  .flow .a{color:var(--accent); font-weight:800; font-size:20px}
+
+  /* build map */
+  .buildmap{position:relative; display:flex; justify-content:space-between; direction:rtl; margin:18px 6px 8px}
+  .buildmap::before{content:""; position:absolute; top:21px; inset-inline:24px; height:3px; background:#cdd7e2}
+  .bm{position:relative; width:12%; text-align:center}
+  .bm .dot{width:44px; height:44px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:16px; border:3px solid #cdd7e2; background:#fff; color:#9aa6b2}
+  .bm .lab2{font-size:12px; margin-top:7px; color:#9aa6b2; font-weight:700; line-height:1.2}
+  .bm.done .dot{background:#16a34a; border-color:#16a34a; color:#fff}
+  .bm.done .lab2{color:#15803d}
+  .bm.now .dot{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 0 5px rgba(255,153,0,.22)}
+  .bm.now .lab2{color:var(--navy)}
+
+  @media (max-width:760px){ .two{grid-template-columns:1fr} .cover h1{font-size:34px} .slide h2{font-size:24px} }
+  @media print{
+    body{overflow:visible}
+    .topbar,.navbar,.pbar{display:none}
+    .stage{position:static; overflow:visible; top:0; bottom:0}
+    .slide{position:static !important; display:block !important; min-height:auto; page-break-after:always; padding:0 0 24px; border-bottom:2px solid #ccc}
+    .s-wrap{transform:none !important}
+    .cover,.divider{color:#000; background:#fff !important}
+    .cover h1,.divider h2{color:var(--navy)}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">מקוד לענן</span><span class="sep">·</span>
+  <span class="topic" id="topic">מפגש 1 — Code</span>
+  <span class="spacer"></span>
+  <button onclick="toggleFs()">מסך מלא</button>
+</div>
+<div class="pbar"><i id="pbar"></i></div>
+
+<div class="stage" id="stage">
+
+  <!-- 1 · COVER -->
+  <section class="slide cover" data-topic="פתיחה">
+    <div class="s-wrap">
+      <div class="eyebrow">קורס DevOps ו-Cloud · מפגש 1 מתוך 8 · שלב <span class="en">Code</span></div>
+      <h1>יסודות והאפליקציה<br><span class="accent">כותבים ומריצים את ה-Tasks API</span></h1>
+      <p class="sub">היום נבנה את שלב ה-<span class="en">Code</span> של הפרויקט: נבין איך תוכנה מדברת ברשת (<span class="en">HTTP</span>), נעבוד ב-<span class="en">Terminal</span> וב-<span class="en">Git</span>, ונריץ בפעם הראשונה את השירות שילווה אותנו לאורך כל הקורס.</p>
+      <div class="pills">
+        <span class="pill">16:00–19:00</span>
+        <span class="pill"><span class="en">DevOps</span> · <span class="en">HTTP</span></span>
+        <span class="pill"><span class="en">Terminal</span> · <span class="en">Git</span></span>
+        <span class="pill"><span class="en">Cloud</span> 101</span>
+        <span class="pill">הפרויקט: <span class="en">Tasks API</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · AGENDA -->
+  <section class="slide" data-topic="אג׳נדה">
+    <div class="s-wrap">
+      <span class="kicker">לוח הזמנים של היום</span>
+      <h2>מה נעשה ב-3 השעות</h2>
+      <div class="grid two">
+        <div class="card">
+          <table class="agenda">
+            <tr><th style="width:130px">זמן</th><th>פעילות</th></tr>
+            <tr><td class="t">16:00–16:15</td><td>פתיחה ויעדי המפגש</td></tr>
+            <tr><td class="t">16:15–17:30</td><td><span class="en">DevOps</span>, <span class="en">HTTP</span>, <span class="en">Terminal</span> + הדגמות</td></tr>
+            <tr><td class="t">17:30–17:40</td><td>הפסקה</td></tr>
+            <tr><td class="t">17:40–18:30</td><td><span class="en">Git</span>, <span class="en">Cloud</span>, סיור בפרויקט + הדגמה</td></tr>
+            <tr><td class="t">18:30–18:55</td><td>מעבדה עצמאית</td></tr>
+            <tr><td class="t">18:55–19:00</td><td>סיכום ומשימת בית</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">בסוף המפגש תדעו</h3>
+          <ul>
+            <li>להסביר מה זה <span class="en">DevOps</span> ואת מסלול <span class="en">Code → Observe</span>.</li>
+            <li>לקרוא בקשת <span class="en">HTTP</span> ולהבין קודי סטטוס.</li>
+            <li>לנווט ב-<span class="en">Terminal</span> ולבצע <span class="en">clone / commit / push</span>.</li>
+            <li>להבין <span class="en">IaaS/PaaS/SaaS</span> ו-<span class="en">Regions/AZ</span>.</li>
+            <li>להריץ את ה-<span class="en">Tasks API</span> על המחשב ולדחוף ל-<span class="en">GitHub</span>.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="box note" style="margin-top:16px">
+        <div class="bt">איך משתמשים במצגת</div>
+        <kbd>←</kbd> להבא · <kbd>→</kbd> לקודם · <kbd>Space</kbd> להמשך. המצגת היא גם <b>חומר עזר מלא</b> — כל הדגמה ומעבדה מופיעות צעד-אחר-צעד לחזרה בבית.
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · WHERE WE ARE IN THE BUILD -->
+  <section class="slide" data-topic="איפה אנחנו בבנייה">
+    <div class="s-wrap">
+      <span class="kicker">מפת הבנייה של הפרויקט</span>
+      <h2>איפה אנחנו בבניית ה-<span class="en">Tasks API</span></h2>
+      <div class="buildmap">
+        <div class="bm now"><div class="dot">1</div><div class="lab2">Code</div></div>
+        <div class="bm"><div class="dot">2</div><div class="lab2">CI</div></div>
+        <div class="bm"><div class="dot">3</div><div class="lab2">Docker</div></div>
+        <div class="bm"><div class="dot">4</div><div class="lab2">AWS</div></div>
+        <div class="bm"><div class="dot">5</div><div class="lab2">Data</div></div>
+        <div class="bm"><div class="dot">6</div><div class="lab2">IaC</div></div>
+        <div class="bm"><div class="dot">7</div><div class="lab2">CD</div></div>
+        <div class="bm"><div class="dot">8</div><div class="lab2">Observe</div></div>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <div class="box simple"><div class="bt">היום — שלב 1: <span class="en">Code</span></div><p style="margin:0">כותבים את ה-<span class="en">Tasks API</span> ב-<span class="en">Java</span> ומריצים אותו <b>מקומית</b> (אחסון בזיכרון), עם בדיקה ראשונה ו-<span class="en">commit</span> ל-<span class="en">GitHub</span>. זו הנקודה שממנה כל שאר הקורס יבנה.</p></div>
+        <div class="box note"><div class="bt">הבא — מפגש 2: <span class="en">CI</span></div><p style="margin:0">ניקח את הקוד הזה ונוסיף <span class="en">GitHub Actions</span> שבונה ובודק אותו אוטומטית בכל <span class="en">push</span>. כל מפגש מוסיף שכבה אחת על מה שכבר בנינו.</p></div>
+      </div>
+      <p class="muted" style="margin-top:12px">בכל מפגש נחזור למפה הזו ונדגיש איפה אנחנו — כך תמיד ברור איך החלק של היום מתחבר לתמונה המלאה.</p>
+    </div>
+  </section>
+
+  <!-- 4 · DIVIDER 1 -->
+  <section class="slide divider" data-topic="חלק 1 · DevOps">
+    <div class="s-wrap">
+      <div class="pnum">חלק 1</div>
+      <h2><span class="en">DevOps</span>: למה אנחנו כאן</h2>
+      <p>לפני שנכתוב קוד — נבין מה הבעיה ש-<span class="en">DevOps</span> פותר, ומה המסע שאפליקציה עוברת מהמחשב שלכם ועד המשתמש.</p>
+    </div>
+  </section>
+
+  <!-- 5 · WHAT IS DEVOPS -->
+  <section class="slide" data-topic="חלק 1 · DevOps">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>מה זה <span class="en">DevOps</span>?</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><span class="en">DevOps</span> הוא הגשר בין <b>כתיבת</b> התוכנה (<span class="en">Development</span>) ל<b>הפעלתה</b> בעולם האמיתי (<span class="en">Operations</span>). אותו צוות אחראי מהקוד ועד שהוא רץ אצל המשתמש — בעזרת אוטומציה.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">תרבות + פרקטיקות שמקצרות את ה-<span class="en">lead time</span> (מרעיון לפרודקשן): אינטגרציה רציפה (<span class="en">CI</span>), אספקה רציפה (<span class="en">CD</span>), תשתית כקוד (<span class="en">IaC</span>) וניטור (<span class="en">Observability</span>).</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt">למה אכפת לנו</div>ארבעת הנושאים של הקורס — <span class="en">AWS</span>, <span class="en">Docker</span>, <span class="en">CI/CD</span>, <span class="en">Observability</span> — הם הכלים שבעזרתם <span class="en">DevOps</span> קורה בפועל, ואנחנו נבנה אותם אחד-אחד על הפרויקט.</div>
+    </div>
+  </section>
+
+  <!-- 6 · WORKS ON MY MACHINE -->
+  <section class="slide" data-topic="חלק 1 · DevOps">
+    <div class="s-wrap">
+      <span class="kicker">הבעיה הקלאסית</span>
+      <h2>"אבל אצלי זה עובד..."</h2>
+      <p class="lead">קוד שעובד על מחשב אחד נשבר אצל אחר — או על השרת. למה?</p>
+      <ul>
+        <li><b>גרסאות שונות</b> — אצלי <span class="en">Java 21</span>, על השרת <span class="en">Java 17</span>.</li>
+        <li><b>תלויות חסרות</b> — ספרייה שמותקנת אצלי ולא שם.</li>
+        <li><b>הגדרות סביבה</b> — משתני סביבה, פורטים, הרשאות, מערכת הפעלה.</li>
+        <li><b>"רץ ידנית"</b> — מי זוכר את כל הצעדים?</li>
+      </ul>
+      <div class="grid two" style="margin-top:6px">
+        <div class="box simple"><div class="bt">הפתרון שנלמד</div><p style="margin:0"><b><span class="en">Docker</span></b> (מפגש 3) אורז קוד + תלויות + סביבה לחבילה אחת שרצה זהה בכל מקום.</p></div>
+        <div class="box simple"><div class="bt">ועוד פתרון</div><p style="margin:0"><b><span class="en">CI/CD</span></b> + <b><span class="en">IaC</span></b> הופכים את הצעדים הידניים לסקריפט אוטומטי.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · LIFECYCLE -->
+  <section class="slide" data-topic="חלק 1 · DevOps">
+    <div class="s-wrap">
+      <span class="kicker">המסע של הקוד</span>
+      <h2>מקוד ועד משתמש — וזה בדיוק מסלול הקורס</h2>
+      <div class="flow">
+        <span class="n">Code</span><span class="a">→</span>
+        <span class="n">Build &amp; Test</span><span class="a">→</span>
+        <span class="n">Package</span><span class="a">→</span>
+        <span class="n">Deploy</span><span class="a">→</span>
+        <span class="n">Observe</span>
+      </div>
+      <table>
+        <tr><th>שלב</th><th>מה קורה</th><th>מתי בקורס</th></tr>
+        <tr><td><span class="en">Code</span></td><td>כותבים ומריצים את ה-<span class="en">Tasks API</span></td><td>מפגש 1 (היום)</td></tr>
+        <tr><td><span class="en">Build &amp; Test</span></td><td>בנייה ובדיקות אוטומטיות (<span class="en">CI</span>)</td><td>מפגש 2</td></tr>
+        <tr><td><span class="en">Package</span></td><td>אריזה ל-<span class="en">container</span> עם <span class="en">Docker</span></td><td>מפגש 3</td></tr>
+        <tr><td><span class="en">Deploy</span></td><td>הרצה בענן <span class="en">AWS</span> + <span class="en">IaC</span> + <span class="en">CD</span></td><td>מפגשים 4–7</td></tr>
+        <tr><td><span class="en">Observe</span></td><td><span class="en">Logs, Metrics, Traces</span></td><td>מפגש 8</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 8 · DIVIDER 2 -->
+  <section class="slide divider" data-topic="חלק 2 · HTTP">
+    <div class="s-wrap">
+      <div class="pnum">חלק 2</div>
+      <h2><span class="en">HTTP</span>: איך תוכנה מדברת</h2>
+      <p>כל שירות ענן, כל <span class="en">API</span>, כל אתר — מדברים <span class="en">HTTP</span>. הפרויקט שלנו הוא בדיוק שרת <span class="en">HTTP</span>.</p>
+    </div>
+  </section>
+
+  <!-- 9 · CLIENT-SERVER -->
+  <section class="slide" data-topic="חלק 2 · HTTP">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>מודל <span class="en">Client–Server</span></h2>
+      <div class="flow">
+        <span class="n">Client (דפדפן / curl)</span><span class="a">— בקשה →</span><span class="n">Server (ה-API שלנו)</span>
+      </div>
+      <div class="flow"><span class="n">Client</span><span class="a">← תגובה —</span><span class="n">Server</span></div>
+      <div class="grid two" style="margin-top:8px">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">הלקוח <b>מבקש</b>, השרת <b>עונה</b>. כמו במסעדה: מזמינים (בקשה), מקבלים צלחת (תגובה).</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">HTTP</span> הוא פרוטוקול <span class="en">request/response</span> מעל <span class="en">TCP</span>. הלקוח פותח חיבור ל-<span class="en">IP</span>+<span class="en">port</span>, שולח בקשה, והשרת מחזיר <span class="en">status</span>, <span class="en">headers</span> ו-<span class="en">body</span>.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · REQ/RESP -->
+  <section class="slide" data-topic="חלק 2 · HTTP">
+    <div class="s-wrap">
+      <span class="kicker">אנטומיה</span>
+      <h2>בקשה ותגובה</h2>
+      <div class="grid two">
+        <div>
+          <span class="filename">HTTP Request</span>
+<pre><span class="k">GET</span> <span class="o">/tasks</span> HTTP/1.1
+<span class="o">Host</span>: localhost:8080
+<span class="o">Accept</span>: application/json</pre>
+        </div>
+        <div>
+          <span class="filename">HTTP Response</span>
+<pre>HTTP/1.1 <span class="k">200 OK</span>
+<span class="o">Content-Type</span>: application/json
+
+<span class="s">{"tasks": [], "count": 0}</span></pre>
+        </div>
+      </div>
+      <p class="muted">שורת בקשה/סטטוס + <span class="en">headers</span> + שורה ריקה + <span class="en">body</span> (כאן <span class="en">JSON</span>).</p>
+    </div>
+  </section>
+
+  <!-- 11 · METHODS -->
+  <section class="slide" data-topic="חלק 2 · HTTP">
+    <div class="s-wrap">
+      <span class="kicker">פעלים</span>
+      <h2>מתודות <span class="en">HTTP</span></h2>
+      <table>
+        <tr><th>מתודה</th><th>משמעות</th><th>בפרויקט שלנו</th></tr>
+        <tr><td><span class="en">GET</span></td><td>קריאה / שליפה</td><td><code>GET /tasks</code> — רשימת משימות</td></tr>
+        <tr><td><span class="en">POST</span></td><td>יצירת משאב חדש</td><td><code>POST /tasks</code> — משימה חדשה</td></tr>
+        <tr><td><span class="en">PUT</span></td><td>עדכון משאב קיים</td><td>סימון משימה כבוצעה</td></tr>
+        <tr><td><span class="en">DELETE</span></td><td>מחיקה</td><td>מחיקת משימה</td></tr>
+      </table>
+      <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">GET</span> הוא <span class="en">idempotent</span> (קריאה חוזרת = אותה תוצאה). <span class="en">POST</span> אינו — שתי קריאות יוצרות שני משאבים. חשוב כשנבנה תורים ו-<span class="en">retries</span> במפגש 5.</p></div>
+    </div>
+  </section>
+
+  <!-- 12 · STATUS -->
+  <section class="slide" data-topic="חלק 2 · HTTP">
+    <div class="s-wrap">
+      <span class="kicker">קודי סטטוס</span>
+      <h2>מה השרת עונה</h2>
+      <table>
+        <tr><th>טווח</th><th>משמעות</th><th>דוגמאות</th></tr>
+        <tr><td><span class="en">2xx</span></td><td>הצלחה</td><td><span class="en">200 OK</span>, <span class="en">201 Created</span></td></tr>
+        <tr><td><span class="en">3xx</span></td><td>הפניה</td><td><span class="en">301</span>, <span class="en">304</span></td></tr>
+        <tr><td><span class="en">4xx</span></td><td>שגיאת הלקוח</td><td><span class="en">400</span>, <span class="en">404 Not Found</span></td></tr>
+        <tr><td><span class="en">5xx</span></td><td>שגיאת השרת</td><td><span class="en">500</span>, <span class="en">503</span></td></tr>
+      </table>
+      <div class="box note"><div class="bt">כלל אצבע</div><p style="margin:0"><b>4xx = הבקשה שגויה</b>, <b>5xx = השרת נפל</b>. ההבחנה קריטית לאבחון תקלות במפגש ה-<span class="en">Observability</span>.</p></div>
+    </div>
+  </section>
+
+  <!-- 13 · PORTS + JSON -->
+  <section class="slide" data-topic="חלק 2 · HTTP">
+    <div class="s-wrap">
+      <span class="kicker">שני מושגים</span>
+      <h2><span class="en">Ports</span> ו-<span class="en">JSON</span></h2>
+      <div class="grid two">
+        <div class="card"><h3 style="margin-top:0"><span class="en">Port</span></h3><p style="margin:0"><span class="en">IP</span> מזהה <b>מחשב</b>; <span class="en">port</span> מזהה <b>אפליקציה</b> עליו. ה-<span class="en">API</span> שלנו יאזין על <code>8080</code> — <code>http://localhost:8080/health</code>.</p></div>
+        <div class="card"><h3 style="margin-top:0"><span class="en">JSON</span></h3>
+<pre>{
+  <span class="o">"id"</span>: <span class="s">"a1b2"</span>,
+  <span class="o">"title"</span>: <span class="s">"Learn Docker"</span>,
+  <span class="o">"done"</span>: <span class="s">false</span>
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 · DEMO curl -->
+  <section class="slide" data-topic="חלק 2 · הדגמה">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> בקשת <span class="en">HTTP</span> ראשונה עם <code>curl</code></div>
+        <p class="muted"><code>curl</code> שולח בקשות <span class="en">HTTP</span> משורת הפקודה — נשתמש בו לכל אורך הקורס.</p>
+        <ol class="steps">
+          <li><b>בקשת <span class="en">GET</span></b>:
+<pre><span class="k">curl</span> <span class="o">https://httpbin.org/get</span></pre></li>
+          <li><b>לראות סטטוס ו-<span class="en">headers</span></b> עם <code>-i</code>:
+<pre><span class="k">curl</span> <span class="o">-i</span> https://httpbin.org/get   <span class="c"># השורה הראשונה: HTTP/1.1 200 OK</span></pre></li>
+          <li><b>בקשת <span class="en">POST</span> עם <span class="en">JSON</span></b>:
+<pre><span class="k">curl</span> <span class="o">-X</span> POST https://httpbin.org/post \
+  <span class="o">-H</span> <span class="s">"Content-Type: application/json"</span> \
+  <span class="o">-d</span> <span class="s">'{"title":"Hello"}'</span></pre></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15 · DIVIDER 3 -->
+  <section class="slide divider" data-topic="חלק 3 · Terminal">
+    <div class="s-wrap">
+      <div class="pnum">חלק 3</div>
+      <h2><span class="en">Terminal</span> ו-<span class="en">Linux</span></h2>
+      <p>כל עבודת ענן ו-<span class="en">DevOps</span> עוברת דרך שורת הפקודה. נכיר את הפקודות שילוו אותנו.</p>
+    </div>
+  </section>
+
+  <!-- 16 · WHY TERMINAL -->
+  <section class="slide" data-topic="חלק 3 · Terminal">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>למה <span class="en">Terminal</span> ולא עכבר?</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">דרך לתת למחשב פקודות בכתב. נראה מאיים בהתחלה, אבל <b>מהיר, מדויק וניתן לאוטומציה</b> — דברים שאי-אפשר עם עכבר.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">ה-<span class="en">shell</span> (<span class="en">bash</span>/<span class="en">zsh</span>) מפרש פקודות. שרתי ענן הם <span class="en">Linux</span> ללא ממשק גרפי — הגישה היחידה היא <span class="en">SSH</span>/<span class="en">SSM</span> ל-<span class="en">shell</span>.</p></div>
+      </div>
+      <div class="box warn" style="margin-top:14px"><div class="bt">הערה ל-Windows</div>עבדו עם <span class="en">WSL2</span> (<span class="en">Ubuntu</span>) או <span class="en">Git Bash</span>. ב-<span class="en">macOS</span>/<span class="en">Linux</span> ה-<span class="en">Terminal</span> מובנה.</div>
+    </div>
+  </section>
+
+  <!-- 17 · COMMANDS -->
+  <section class="slide" data-topic="חלק 3 · Terminal">
+    <div class="s-wrap">
+      <span class="kicker">דף עזר</span>
+      <h2>הפקודות שצריך להכיר</h2>
+      <table>
+        <tr><th>פקודה</th><th>מה היא עושה</th></tr>
+        <tr><td><code>pwd</code></td><td>איפה אני (תיקייה נוכחית)</td></tr>
+        <tr><td><code>ls -la</code></td><td>רשימת קבצים (כולל מוסתרים)</td></tr>
+        <tr><td><code>cd path</code> / <code>cd ..</code></td><td>מעבר תיקייה / אחורה</td></tr>
+        <tr><td><code>mkdir name</code></td><td>יצירת תיקייה</td></tr>
+        <tr><td><code>cat file</code></td><td>הצגת תוכן קובץ</td></tr>
+        <tr><td><code>echo $VAR</code></td><td>ערך משתנה סביבה</td></tr>
+        <tr><td><code>curl</code> / <code>code .</code></td><td>בקשת רשת / פתיחה ב-<span class="en">VS Code</span></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 18 · PATHS/ENV/PERMS -->
+  <section class="slide" data-topic="חלק 3 · Terminal">
+    <div class="s-wrap">
+      <span class="kicker">שלושה מושגים</span>
+      <h2>נתיבים, משתני סביבה והרשאות</h2>
+      <div class="grid two">
+        <div class="card"><h3 style="margin-top:0">נתיבים</h3><p style="margin:0"><b>מוחלט</b> מתחיל ב-<code>/</code>; <b>יחסי</b> ביחס למקום הנוכחי (<code>./src</code>, <code>../</code>); <code>~</code> = תיקיית הבית.</p></div>
+        <div class="card"><h3 style="margin-top:0">משתני סביבה</h3><p style="margin:0">ערכים שהאפליקציה קוראת מהסביבה, למשל <code>APP_PORT</code>. <code>export APP_PORT=8080</code>. כך לא כותבים סודות בקוד.</p></div>
+      </div>
+      <div class="box tech" style="margin-top:14px"><div class="bt">הרשאות</div><p style="margin:0">ב-<span class="en">Linux</span> לכל קובץ הרשאות <span class="en">r/w/x</span>. קובץ מפתח <span class="en">SSH</span> חייב הרשאות מוגבלות (<code>chmod 400 key.pem</code>) — נתקל בזה ב-<span class="en">EC2</span> במפגש 4.</p></div>
+    </div>
+  </section>
+
+  <!-- 19 · INSTALL -->
+  <section class="slide" data-topic="חלק 3 · Terminal">
+    <div class="s-wrap">
+      <span class="kicker">התקנת כלים</span>
+      <h2>מנהלי חבילות ובדיקת גרסאות</h2>
+      <div class="grid two">
+        <div><span class="filename">macOS (Homebrew)</span>
+<pre><span class="k">brew install</span> <span class="o">git awscli</span>
+<span class="k">brew install --cask</span> <span class="o">docker temurin</span></pre></div>
+        <div><span class="filename">Ubuntu / WSL (apt)</span>
+<pre><span class="k">sudo apt update</span>
+<span class="k">sudo apt install</span> <span class="o">git curl</span></pre></div>
+      </div>
+      <div class="box note"><div class="bt">תמיד לאמת אחרי התקנה</div>
+<pre><span class="k">java</span> -version   <span class="c"># 17 ומעלה</span>
+<span class="k">git</span> --version
+<span class="k">docker</span> --version</pre></div>
+    </div>
+  </section>
+
+  <!-- 20 · DEMO terminal -->
+  <section class="slide" data-topic="חלק 3 · הדגמה">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> סיבוב ראשון ב-<span class="en">Terminal</span></div>
+        <ol class="steps">
+          <li><b>איפה אני ומה יש כאן:</b>
+<pre><span class="k">pwd</span>
+<span class="k">ls</span> <span class="o">-la</span></pre></li>
+          <li><b>תיקייה חדשה ומעבר אליה:</b>
+<pre><span class="k">mkdir</span> <span class="o">cloud-course</span>
+<span class="k">cd</span> <span class="o">cloud-course</span></pre></li>
+          <li><b>קובץ, כתיבה והצגה:</b>
+<pre><span class="k">echo</span> <span class="s">"hello"</span> > note.txt
+<span class="k">cat</span> <span class="o">note.txt</span></pre></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 21 · DIVIDER 4 -->
+  <section class="slide divider" data-topic="חלק 4 · Git">
+    <div class="s-wrap">
+      <div class="pnum">חלק 4</div>
+      <h2><span class="en">Git</span> ו-<span class="en">GitHub</span></h2>
+      <p>איך שומרים גרסאות, עובדים בצוות, ובהמשך מפעילים את ה-<span class="en">CI/CD</span>. נקבל את קוד הפרויקט ונבצע <span class="en">commit</span> ראשון.</p>
+    </div>
+  </section>
+
+  <!-- 22 · VERSION CONTROL -->
+  <section class="slide" data-topic="חלק 4 · Git">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>מה זה ניהול גרסאות?</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><span class="en">Git</span> הוא "מכונת זמן" לקוד: שומר תמונת-מצב (<span class="en">commit</span>) בכל שלב, מאפשר לחזור אחורה ולעבוד במקביל בלי לדרוס.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">מערכת בקרת-גרסאות <b>מבוזרת</b>: לכל מפתח עותק מלא של ההיסטוריה. <span class="en">GitHub</span> מארח את ה-<span class="en">repo</span> המרכזי ומוסיף <span class="en">PRs</span>, <span class="en">code review</span> ו-<span class="en">Actions</span> (ה-<span class="en">CI/CD</span> שלנו).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 23 · GIT MODEL -->
+  <section class="slide" data-topic="חלק 4 · Git">
+    <div class="s-wrap">
+      <span class="kicker">מודל מנטלי</span>
+      <h2>ארבעת המקומות של <span class="en">Git</span></h2>
+      <div class="flow">
+        <span class="n">Working Dir</span><span class="a">— add →</span><span class="n">Staging</span><span class="a">— commit →</span><span class="n">Local Repo</span><span class="a">— push →</span><span class="n">GitHub</span>
+      </div>
+      <table>
+        <tr><th>אזור</th><th>מה זה</th></tr>
+        <tr><td><span class="en">Working Directory</span></td><td>הקבצים שאתם עורכים</td></tr>
+        <tr><td><span class="en">Staging</span></td><td>מה שנכלל ב-<span class="en">commit</span> הבא (<code>git add</code>)</td></tr>
+        <tr><td><span class="en">Local Repo</span></td><td>ההיסטוריה אצלכם (<code>git commit</code>)</td></tr>
+        <tr><td><span class="en">Remote</span></td><td>ההיסטוריה ב-<span class="en">GitHub</span> (<code>git push</code>)</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 24 · GIT COMMANDS -->
+  <section class="slide" data-topic="חלק 4 · Git">
+    <div class="s-wrap">
+      <span class="kicker">דף עזר</span>
+      <h2>הפקודות היומיומיות</h2>
+      <table>
+        <tr><th>פקודה</th><th>מה היא עושה</th></tr>
+        <tr><td><code>git clone URL</code></td><td>הורדת <span class="en">repo</span> למחשב</td></tr>
+        <tr><td><code>git checkout v1-code</code></td><td>מעבר לגרסת הקוד של מפגש 1</td></tr>
+        <tr><td><code>git status</code></td><td>מה השתנה</td></tr>
+        <tr><td><code>git add .</code></td><td>הוספת שינויים ל-<span class="en">staging</span></td></tr>
+        <tr><td><code>git commit -m "msg"</code></td><td>שמירת תמונת-מצב</td></tr>
+        <tr><td><code>git push</code></td><td>העלאה ל-<span class="en">GitHub</span></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 25 · DEMO git -->
+  <section class="slide" data-topic="חלק 4 · הדגמה">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> מ-<span class="en">clone</span> ועד <span class="en">push</span></div>
+        <ol class="steps">
+          <li><b>הגדרה חד-פעמית:</b>
+<pre><span class="k">git config</span> --global user.name <span class="s">"Your Name"</span>
+<span class="k">git config</span> --global user.email <span class="s">"you@example.com"</span></pre></li>
+          <li><b>עריכת קובץ</b> (למשל <code>README.md</code>) ובדיקה:
+<pre><span class="k">git status</span></pre></li>
+          <li><b>הוספה, שמירה והעלאה:</b>
+<pre><span class="k">git add</span> <span class="o">.</span>
+<span class="k">git commit</span> <span class="o">-m</span> <span class="s">"My first commit"</span>
+<span class="k">git push</span></pre></li>
+        </ol>
+        <div class="box warn"><div class="bt">פעם ראשונה ב-push</div><span class="en">GitHub</span> יבקש הזדהות — <span class="en">Personal Access Token</span> (לא סיסמה) או <span class="en">SSH key</span>. נסביר בכיתה.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 26 · DIVIDER 5 -->
+  <section class="slide divider" data-topic="חלק 5 · Cloud">
+    <div class="s-wrap">
+      <div class="pnum">חלק 5</div>
+      <h2>מה זה בעצם "ענן"?</h2>
+      <p>"הענן" הוא מחשבים של מישהו אחר שאתם שוכרים לפי שימוש. נבין את המודלים והמבנה של <span class="en">AWS</span> — לקראת מפגש 4.</p>
+    </div>
+  </section>
+
+  <!-- 27 · ON-PREM VS CLOUD -->
+  <section class="slide" data-topic="חלק 5 · Cloud">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2><span class="en">On-Prem</span> מול <span class="en">Cloud</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">פעם: קונים שרת פיזי ומתחזקים אותו. בענן: לוחצים כפתור, מקבלים שרת תוך דקות, משלמים לפי שימוש, ומכבים כשמסיימים.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">משאבי מחשוב לפי דרישה (<span class="en">on-demand</span>) דרך <span class="en">API</span>, תמחור <span class="en">pay-as-you-go</span>, גמישות (<span class="en">elasticity</span>) ואחריות תפעול משותפת עם הספק.</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt">למה זה משנה לנו</div>במפגש 4 נריץ את ה-<span class="en">Tasks API</span> על שרת אמיתי בענן תוך דקות — ונכבה אותו בסוף.</div>
+    </div>
+  </section>
+
+  <!-- 28 · IAAS/PAAS/SAAS -->
+  <section class="slide" data-topic="חלק 5 · Cloud">
+    <div class="s-wrap">
+      <span class="kicker">מודלי שירות</span>
+      <h2><span class="en">IaaS</span> · <span class="en">PaaS</span> · <span class="en">SaaS</span></h2>
+      <table>
+        <tr><th>מודל</th><th>מה מקבלים</th><th>אתם מנהלים</th><th>דוגמה</th></tr>
+        <tr><td><span class="en">IaaS</span></td><td>תשתית גולמית</td><td>מערכת הפעלה ומעלה</td><td><span class="en">EC2</span></td></tr>
+        <tr><td><span class="en">PaaS</span></td><td>פלטפורמה לקוד</td><td>רק את הקוד</td><td><span class="en">Lambda</span></td></tr>
+        <tr><td><span class="en">SaaS</span></td><td>תוכנה מוכנה</td><td>כלום</td><td><span class="en">Gmail</span></td></tr>
+      </table>
+      <div class="box simple"><div class="bt">אנלוגיה: פיצה</div><p style="margin:0"><b><span class="en">IaaS</span></b> = מצרכים ואופים לבד · <b><span class="en">PaaS</span></b> = פיצה קפואה לחימום · <b><span class="en">SaaS</span></b> = משלוח מוכן. בקורס נתמקד ב-<span class="en">IaaS</span> (<span class="en">EC2</span>) ו-<span class="en">PaaS</span> (<span class="en">Lambda</span>).</p></div>
+    </div>
+  </section>
+
+  <!-- 29 · REGIONS/AZ -->
+  <section class="slide" data-topic="חלק 5 · Cloud">
+    <div class="s-wrap">
+      <span class="kicker">המבנה של <span class="en">AWS</span></span>
+      <h2><span class="en">Regions</span> ו-<span class="en">Availability Zones</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><b><span class="en">Region</span></b> = אזור גיאוגרפי (פרנקפורט, אירלנד). <b><span class="en">AZ</span></b> = מרכז נתונים בתוך אותו אזור. בוחרים <span class="en">Region</span> קרוב למשתמשים.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">כל <span class="en">Region</span> מכילה כמה <span class="en">AZs</span> מבודדות פיזית ומחוברות ברשת מהירה. פריסה על כמה <span class="en">AZs</span> = עמידות (<span class="en">high availability</span>). חלק מהשירותים גלובליים (<span class="en">IAM</span>).</p></div>
+      </div>
+      <div class="box warn" style="margin-top:14px"><div class="bt">טיפ מעשי</div>תמיד בדקו באיזה <span class="en">Region</span> אתם (פינה עליונה בקונסולה). נעבוד באותו <span class="en">Region</span> לאורך הקורס.</div>
+    </div>
+  </section>
+
+  <!-- 30 · SHARED RESPONSIBILITY -->
+  <section class="slide" data-topic="חלק 5 · Cloud">
+    <div class="s-wrap">
+      <span class="kicker">אבטחה</span>
+      <h2>מודל האחריות המשותפת</h2>
+      <div class="grid two">
+        <div class="card"><h3 style="margin-top:0"><span class="en">AWS</span> אחראית ל…</h3><p style="margin:0">אבטחת <b>הענן עצמו</b>: חומרה, מרכזי נתונים, רשת פיזית, וירטואליזציה.</p></div>
+        <div class="card"><h3 style="margin-top:0">אתם אחראים ל…</h3><p style="margin:0">אבטחה <b>בתוך הענן</b>: הרשאות (<span class="en">IAM</span>), נתונים, הצפנה, עדכוני <span class="en">OS</span> וקוד.</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt">למה זה כאן</div>במפגש 4 ניישם את הצד שלכם: משתמשי <span class="en">IAM</span>, הרשאה מינימלית ו-<span class="en">MFA</span>.</div>
+    </div>
+  </section>
+
+  <!-- 31 · DIVIDER 6 -->
+  <section class="slide divider" data-topic="חלק 6 · הפרויקט">
+    <div class="s-wrap">
+      <div class="pnum">חלק 6</div>
+      <h2>הפרויקט: <span class="en">Tasks API</span></h2>
+      <p>שירות <span class="en">HTTP</span> פשוט ב-<span class="en">Java</span> נקי. היום נריץ אותו מקומית — שלב ה-<span class="en">Code</span> של מפת הבנייה.</p>
+    </div>
+  </section>
+
+  <!-- 32 · PROJECT OVERVIEW + REPO -->
+  <section class="slide" data-topic="חלק 6 · הפרויקט">
+    <div class="s-wrap">
+      <span class="kicker">סקירה</span>
+      <h2>מה אנחנו בונים — ומבנה ה-<span class="en">repo</span></h2>
+      <div class="grid two">
+        <div>
+          <p style="margin-top:0">שירות לניהול משימות שחושף נקודות קצה ב-<span class="en">HTTP</span>, ב-<span class="en">Java</span> נקי (ללא <span class="en">framework</span>).</p>
+          <table>
+            <tr><th>נקודת קצה</th><th>תפקיד</th></tr>
+            <tr><td><code>GET /health</code></td><td>בדיקת חיים</td></tr>
+            <tr><td><code>GET /tasks</code></td><td>כל המשימות</td></tr>
+            <tr><td><code>POST /tasks</code></td><td>יצירת משימה</td></tr>
+            <tr><td><code>GET /tasks/{id}</code></td><td>משימה לפי מזהה</td></tr>
+          </table>
+        </div>
+        <div>
+          <span class="filename">tasks-api/ (יתמלא לאורך הקורס)</span>
+<pre>tasks-api/
+  <span class="o">app/</span>        <span class="c"># שירות Java   (היום · מפגש 1)</span>
+  <span class="o">.github/</span>    <span class="c"># CI/CD        (מפגשים 2,7)</span>
+  <span class="o">docker/</span>     <span class="c"># Dockerfile   (מפגש 3)</span>
+  <span class="o">lambda/</span>     <span class="c"># צרכן SQS     (מפגש 5)</span>
+  <span class="o">infra/</span>      <span class="c"># Terraform    (מפגש 6)</span></pre>
+          <p class="muted" style="margin-bottom:0">היום נוגעים רק ב-<code>app/</code>. כל מפגש ממלא תיקייה נוספת.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 33 · CODE 1 -->
+  <section class="slide" data-topic="חלק 6 · הפרויקט">
+    <div class="s-wrap">
+      <span class="kicker">קוד · 1</span>
+      <h2>הלב: יצירת שרת <span class="en">HTTP</span></h2>
+      <span class="filename">app/src/main/java/.../App.java</span>
+<pre><span class="k">public class</span> App {
+  <span class="k">public static void</span> main(String[] args) <span class="k">throws</span> Exception {
+    <span class="c">// 1. שרת שמאזין על פורט 8080</span>
+    HttpServer server = HttpServer.create(<span class="k">new</span> InetSocketAddress(8080), 0);
+
+    <span class="c">// 2. מחברים נתיבים ל-handlers</span>
+    server.createContext(<span class="s">"/health"</span>, <span class="k">new</span> HealthHandler());
+    server.createContext(<span class="s">"/tasks"</span>,  <span class="k">new</span> TasksHandler(repo));
+
+    server.start();   <span class="c">// 3. מפעילים</span>
+  }
+}</pre>
+      <p class="muted"><code>HttpServer</code> מובנה ב-<span class="en">JDK</span> — אפס ספריות חיצוניות לשכבת ה-<span class="en">HTTP</span>.</p>
+    </div>
+  </section>
+
+  <!-- 34 · CODE 2 -->
+  <section class="slide" data-topic="חלק 6 · הפרויקט">
+    <div class="s-wrap">
+      <span class="kicker">קוד · 2</span>
+      <h2>ה-<span class="en">handler</span> של <code>/health</code></h2>
+      <span class="filename">HealthHandler.java</span>
+<pre><span class="k">public void</span> handle(HttpExchange ex) <span class="k">throws</span> IOException {
+  String body = <span class="s">"{\"status\":\"UP\"}"</span>;            <span class="c">// גוף JSON</span>
+  ex.getResponseHeaders().add(<span class="s">"Content-Type"</span>, <span class="s">"application/json"</span>);
+  ex.sendResponseHeaders(<span class="k">200</span>, body.getBytes().length);  <span class="c">// סטטוס + אורך</span>
+  <span class="k">try</span> (var os = ex.getResponseBody()) { os.write(body.getBytes()); }
+}</pre>
+      <div class="box tech"><div class="bt">מה לשים לב</div><p style="margin:0">כל <span class="en">handler</span> מקבל <code>HttpExchange</code> שמכיל בקשה <b>ותגובה</b>: קובעים <span class="en">headers</span>, שולחים <span class="en">status</span>, וכותבים <span class="en">body</span> — בדיוק האנטומיה של <span class="en">HTTP</span>.</p></div>
+    </div>
+  </section>
+
+  <!-- 35 · STORAGE ABSTRACTION -->
+  <section class="slide" data-topic="חלק 6 · הפרויקט">
+    <div class="s-wrap">
+      <span class="kicker">תכנון לקראת העתיד</span>
+      <h2>אחסון מתחלף: זיכרון היום, <span class="en">DynamoDB</span> בהמשך</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">נגדיר <b>ממשק</b> <code>TaskRepository</code> עם שתי מימושים: <code>InMemory</code> (היום) ו-<code>DynamoDb</code> (מפגש 5). בוחרים לפי משתנה סביבה <code>STORAGE</code> — בלי לשנות את שאר הקוד.</p></div>
+        <div class="box tech"><div class="bt">למה זה חשוב</div><p style="margin:0">זו הפשטה (<span class="en">abstraction</span>) שמאפשרת להחליף תשתית בלי לגעת בלוגיקה — נחזור אליה כשנוסיף אחסון אמיתי בענן. דוגמה ל"לבנות היום עם המחר בראש".</p></div>
+      </div>
+<pre><span class="k">interface</span> TaskRepository { List&lt;Task&gt; all(); Task save(Task t); Optional&lt;Task&gt; byId(String id); }
+<span class="c">// STORAGE=memory   -> InMemoryTaskRepository   (מפגש 1)</span>
+<span class="c">// STORAGE=dynamodb -> DynamoDbTaskRepository   (מפגש 5)</span></pre>
+    </div>
+  </section>
+
+  <!-- 36 · BUILD AND RUN -->
+  <section class="slide" data-topic="חלק 6 · הפרויקט">
+    <div class="s-wrap">
+      <span class="kicker">בנייה והרצה</span>
+      <h2>איך מריצים</h2>
+      <div class="grid two">
+        <div><span class="filename">הדרך המהירה</span>
+<pre><span class="k">make</span> <span class="o">run</span>
+<span class="c"># מריץ את האפליקציה במצב זיכרון</span>
+<span class="s"># Listening on http://localhost:8080</span></pre>
+        <p class="muted"><code>make run</code> עוטף את פקודת ה-<span class="en">Maven</span>/<span class="en">Java</span>.</p></div>
+        <div><span class="filename">בדיקות</span>
+<pre><span class="k">make</span> <span class="o">test</span>
+<span class="c"># mvn -pl app test — בדיקות יחידה</span></pre>
+        <p class="muted"><span class="en">Maven</span> בונה ובודק; את ה-<span class="en">JAR</span> נארוז ב-<span class="en">Docker</span> במפגש 3.</p></div>
+      </div>
+      <div class="box note"><div class="bt">מה זה <span class="en">JAR</span>?</div>קובץ אחד שאורז את כל ה-<span class="en">.class</span> — יחידת ההרצה של <span class="en">Java</span>. ה-<span class="en">repo</span> כולל <code>pom.xml</code> ו-<code>Makefile</code> מוכנים.</div>
+    </div>
+  </section>
+
+  <!-- 37 · DEMO run -->
+  <section class="slide" data-topic="הדגמה · בניית שלב 1">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> בונים את שלב 1 — מריצים את ה-<span class="en">Tasks API</span></div>
+        <ol class="steps">
+          <li><b>משיכת הקוד וגרסת מפגש 1:</b>
+<pre><span class="k">git clone</span> <span class="o">https://github.com/jenkins-ravtech1/task-api.git</span>
+<span class="k">cd</span> <span class="o">tasks-api</span>
+<span class="k">git checkout</span> <span class="o">v1-code</span></pre></li>
+          <li><b>הרצת השירות</b> (חלון <span class="en">Terminal</span> אחד):
+<pre><span class="k">make</span> <span class="o">run</span>
+<span class="s"># Listening on http://localhost:8080</span></pre></li>
+          <li><b>קריאות</b> (חלון שני) — וגם בדפדפן:
+<pre><span class="k">curl</span> <span class="o">localhost:8080/health</span>   <span class="c"># {"status":"UP","version":"dev"}</span>
+<span class="k">curl</span> <span class="o">localhost:8080/tasks</span>    <span class="c"># {"tasks":[],"count":0}</span></pre></li>
+          <li><b>יצירת משימה ושליפה מחדש:</b>
+<pre><span class="k">curl</span> <span class="o">-X</span> POST localhost:8080/tasks \
+  <span class="o">-H</span> <span class="s">"Content-Type: application/json"</span> \
+  <span class="o">-d</span> <span class="s">'{"title":"Learn Docker"}'</span>
+<span class="k">curl</span> <span class="o">localhost:8080/tasks</span>    <span class="c"># עכשיו יש משימה אחת</span></pre></li>
+          <li><b>בדיקות ועצירה:</b> <code>make test</code> · ואז <kbd>Ctrl</kbd>+<kbd>C</kbd> לעצירה.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 38 · LAB -->
+  <section class="slide" data-topic="מעבדה">
+    <div class="s-wrap">
+      <div class="block lab">
+        <div class="hd"><span class="badge">מעבדה</span> תורכם לבנות את שלב 1 — 25 דקות</div>
+        <ol class="steps">
+          <li><b>שכפלו</b> את ה-<span class="en">repo</span>, היכנסו אליו ועברו לגרסה: <code>git checkout v1-code</code>.</li>
+          <li><b>הריצו</b> את ה-<span class="en">Tasks API</span> (<code>make run</code>).</li>
+          <li><b>קראו</b> ל-<code>/health</code> ול-<code>/tasks</code> ב-<code>curl</code> ובדפדפן.</li>
+          <li><b>צרו</b> שתי משימות עם <code>POST</code> ובדקו שהן חוזרות ב-<code>GET /tasks</code>.</li>
+          <li><b>אתגר:</b> שנו את תגובת <code>/health</code> ל-<code>{"status":"UP","by":"your-name"}</code>, הריצו מחדש ואמתו.</li>
+          <li><b>בדיקות + <span class="en">Git</span>:</b> <code>make test</code> → <code>git add .</code> → <code>git commit -m "lab 1"</code> → <code>git push</code>.</li>
+        </ol>
+        <div class="box note" style="margin-top:6px"><div class="bt">סימן הצלחה</div>השרת רץ, ארבע נקודות הקצה מגיבות, הבדיקות עוברות, והשינוי שלכם נראה ב-<span class="en">GitHub</span>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 39 · HW -->
+  <section class="slide" data-topic="משימת בית">
+    <div class="s-wrap">
+      <div class="block hw">
+        <div class="hd"><span class="badge">משימת בית</span> שלוש משימות לפני מפגש 2</div>
+        <ol class="steps">
+          <li><b>התקינו ואמתו</b> את כל הכלים: <code>java -version</code> (17+), <code>git --version</code>, <code>docker --version</code>.</li>
+          <li><b>פתחו חשבון <span class="en">AWS</span></b> (<span class="en">Free Plan</span>) — כבר עכשיו, כי ההפעלה לוקחת זמן. <b>נשתמש בו רק ממפגש 4</b>, אבל עדיף להקדים. בחרו <span class="en">Free account plan</span> והפעילו <span class="en">MFA</span> ל-<span class="en">root</span>.</li>
+          <li><b>קריאה קצרה:</b> דף עזר ל-<span class="en">HTTP status codes</span> (<span class="en">MDN</span>).</li>
+        </ol>
+        <div class="box warn" style="margin-top:6px"><div class="bt">למה <span class="en">Free Plan</span></div>הוא עוצר לפני חיוב. שירותים יקרים שאינם נכללים — נריץ מקומית עם <span class="en">LocalStack</span> (מפגש 5).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 40 · RECAP + NEXT -->
+  <section class="slide" data-topic="סיכום">
+    <div class="s-wrap">
+      <span class="kicker">סיכום מפגש 1</span>
+      <h2>מה בנינו, ולאן ממשיכים</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3 style="margin-top:0">שלב 1 הושלם — <span class="en">Code</span></h3>
+          <ul>
+            <li>הבנו <span class="en">DevOps</span>, <span class="en">HTTP</span>, <span class="en">Terminal</span>, <span class="en">Git</span> ו-<span class="en">Cloud</span>.</li>
+            <li>הרצנו את ה-<span class="en">Tasks API</span> מקומית ודחפנו ל-<span class="en">GitHub</span>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">הבא — מפגש 2: <span class="en">CI</span></h3>
+          <ul>
+            <li>נוסיף <span class="en">GitHub Actions</span> שבונה ובודק בכל <span class="en">push</span>.</li>
+            <li>הקוד שכתבנו היום הוא הקלט של ה-<span class="en">pipeline</span>.</li>
+          </ul>
+          <div class="box warn" style="margin-top:6px"><div class="bt">לא לשכוח</div>כל הכלים מותקנים, ו-<span class="en">commit</span> אחד לפחות דחוף ל-<span class="en">GitHub</span>.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 41 · END -->
+  <section class="slide cover" data-topic="סוף">
+    <div class="s-wrap">
+      <div class="eyebrow">מפגש 1 הושלם · שלב <span class="en">Code</span></div>
+      <h1>שאלות?<br><span class="accent">נתראה במפגש 2 — <span class="en">CI</span> (<span class="en">Build &amp; Test</span>)</span></h1>
+      <p class="sub">תזכורת: כל הכלים מותקנים, <span class="en">commit</span> דחוף ל-<span class="en">GitHub</span>, וחשבון <span class="en">AWS</span> (<span class="en">Free Plan</span>) פתוח לקראת מפגש 4.</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button id="prev" onclick="go(-1)">→ הקודם</button>
+  <div style="text-align:center"><div class="count" id="count">1 / 1</div><div class="hint">מקשים: ← הבא · → הקודם</div></div>
+  <button id="next" class="primary" onclick="go(1)">הבא ←</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const stage = document.getElementById('stage');
+  let i = 0;
+  function clamp(n){ return Math.max(0, Math.min(slides.length-1, n)); }
+  function fit(){
+    const wrap = slides[i] && slides[i].querySelector('.s-wrap');
+    if(!wrap) return;
+    wrap.style.transform='none';
+    const pad=22;
+    const availH = stage.clientHeight - pad*2;
+    const availW = stage.clientWidth - pad*2;
+    const h = wrap.offsetHeight, w = wrap.offsetWidth;
+    if(!h || !w) return;
+    const scale = Math.min(1, availH/h, availW/w);
+    wrap.style.transform = scale<0.999 ? 'scale('+scale.toFixed(4)+')' : 'none';
+  }
+  function render(){
+    slides.forEach((s,k)=> s.classList.toggle('active', k===i));
+    document.getElementById('count').textContent = (i+1)+' / '+slides.length;
+    document.getElementById('pbar').style.width = ((i+1)/slides.length*100)+'%';
+    document.getElementById('topic').textContent = 'מפגש 1 — ' + (slides[i].dataset.topic||'');
+    document.getElementById('prev').disabled = (i===0);
+    document.getElementById('next').disabled = (i===slides.length-1);
+    requestAnimationFrame(fit);
+    history.replaceState(null,'', '#'+(i+1));
+  }
+  function go(d){ i = clamp(i+d); render(); }
+  function jump(n){ i = clamp(n); render(); }
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowLeft' || e.key===' ' || e.key==='PageDown'){ e.preventDefault(); go(1); }
+    else if(e.key==='ArrowRight' || e.key==='PageUp'){ e.preventDefault(); go(-1); }
+    else if(e.key==='Home'){ jump(0); }
+    else if(e.key==='End'){ jump(slides.length-1); }
+  });
+  function toggleFs(){ if(!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); } else { document.exitFullscreen && document.exitFullscreen(); } }
+  window.addEventListener('resize', ()=>requestAnimationFrame(fit));
+  document.addEventListener('fullscreenchange', ()=>requestAnimationFrame(fit));
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>requestAnimationFrame(fit)); }
+  const start = parseInt((location.hash||'').replace('#',''),10);
+  if(!isNaN(start)) i = clamp(start-1);
+  render();
+</script>
+</body>
+</html>

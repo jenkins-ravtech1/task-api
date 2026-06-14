@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מפגש 7 · CD — פריסה אוטומטית</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0f2e4d; --blue:#1F4E79; --blue2:#2E5496; --accent:#ff9900;
+    --bg:#0f1722; --stage:#eef2f7; --card:#ffffff; --ink:#1a2330; --muted:#5b6776; --line:#dfe6ee;
+    --simple:#0ea5b7; --tech:#6366f1; --demo:#16a34a; --lab:#ff9900; --hw:#7c3aed;
+    --code-bg:#0b2233; --code-ink:#e6f0fa;
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  html{direction:rtl}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); overflow:hidden;
+    font-family:"Heebo","Segoe UI","Arial",sans-serif; direction:rtl; text-align:right;
+  }
+  code,.en,kbd{direction:ltr; unicode-bidi:isolate;}
+  code{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace; font-size:.85em;
+       background:#eef3f9; color:#16324f; padding:.06em .42em; border-radius:6px; border:1px solid #dbe6f1;}
+  kbd{font-family:"JetBrains Mono",monospace; font-size:.8em; background:#1f2937; color:#e5e7eb;
+      border:1px solid #374151; border-bottom-width:2px; border-radius:6px; padding:1px 7px}
+
+  /* chrome */
+  .topbar{position:fixed; top:0; inset-inline:0; height:50px; z-index:30;
+    background:linear-gradient(90deg,var(--navy),var(--blue2)); color:#fff;
+    display:flex; align-items:center; gap:14px; padding:0 18px; box-shadow:0 2px 10px rgba(0,0,0,.25)}
+  .topbar .brand{font-weight:800; font-size:15px}
+  .topbar .sep{opacity:.5}
+  .topbar .topic{font-size:14px; opacity:.92; font-weight:500}
+  .topbar .spacer{flex:1}
+  .topbar button{background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.25);
+    border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer; font-family:inherit}
+  .topbar button:hover{background:rgba(255,255,255,.26)}
+  .pbar{position:fixed; top:50px; inset-inline:0; height:4px; background:#cdd7e2; z-index:30}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),#ffc46b); transition:width .25s}
+
+  .stage{position:fixed; top:54px; bottom:58px; inset-inline:0; overflow:hidden; background:var(--stage)}
+  .navbar{position:fixed; bottom:0; inset-inline:0; height:58px; z-index:30; background:#fff;
+    border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 18px}
+  .navbar .count{font-weight:700; color:var(--muted); font-size:14px; direction:ltr; unicode-bidi:isolate}
+  .navbar .hint{font-size:12.5px; color:#9aa6b2}
+  .navbar button{font-family:inherit; cursor:pointer; border-radius:10px; padding:9px 18px; font-size:15px; font-weight:700;
+    border:1px solid var(--line); background:#fff; color:var(--navy)}
+  .navbar button.primary{background:var(--navy); color:#fff; border-color:var(--navy)}
+  .navbar button:disabled{opacity:.4; cursor:default}
+
+  /* slides */
+  .slide{display:none; position:absolute; inset:0; padding:18px 22px}
+  .slide.active{display:flex; align-items:center; justify-content:center; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+  .s-wrap{max-width:1000px; width:100%; margin:0 auto; transform-origin:center center}
+  .kicker{display:inline-block; font-size:13px; font-weight:700; color:var(--accent);
+    text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px}
+  .slide h2{font-size:30px; font-weight:800; color:var(--navy); margin:0 0 14px; line-height:1.2}
+  .slide h3{font-size:20px; font-weight:800; color:var(--blue2); margin:18px 0 8px}
+  .slide p{font-size:17.5px; line-height:1.6; margin:0 0 12px}
+  .slide ul,.slide ol{font-size:17px; line-height:1.6; margin:8px 0; padding-inline-start:24px}
+  .slide li{margin:7px 0}
+  .lead{font-size:19px; color:#33414f}
+  .muted{color:var(--muted)}
+
+  /* cover + divider */
+  .cover{background:radial-gradient(1200px 500px at 80% -10%,#1c476f 0,transparent 60%),linear-gradient(135deg,var(--navy),var(--blue) 70%); color:#fff}
+  .cover .eyebrow{font-size:15px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; font-weight:700}
+  .cover h1{font-size:46px; line-height:1.12; margin:10px 0 8px; font-weight:900}
+  .cover h1 .accent{color:var(--accent)}
+  .cover .sub{font-size:20px; opacity:.95; max-width:760px}
+  .cover .pills{margin-top:22px; display:flex; flex-wrap:wrap; gap:10px}
+  .cover .pill{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:8px 16px; font-size:14.5px}
+  .divider{background:linear-gradient(135deg,#13243a,#22507e); color:#fff}
+  .divider .pnum{font-size:18px; font-weight:700; color:var(--accent); letter-spacing:.1em}
+  .divider h2{color:#fff; font-size:40px; margin:6px 0 10px}
+  .divider p{font-size:19px; opacity:.92; max-width:720px}
+
+  /* cards / boxes */
+  .grid{display:grid; gap:16px}
+  .two{grid-template-columns:1fr 1fr}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:0 4px 16px rgba(15,46,77,.06)}
+  .box{border-radius:14px; padding:16px 18px; border:1px solid var(--line)}
+  .box .bt{font-weight:800; font-size:14px; margin-bottom:8px; display:flex; align-items:center; gap:8px}
+  .box .bt::before{content:""; width:10px; height:10px; border-radius:50%}
+  .box.simple{background:#e7f8fb; border-color:#bde9f0}
+  .box.simple .bt{color:#0b7c8c} .box.simple .bt::before{background:var(--simple)}
+  .box.tech{background:#eef0fe; border-color:#d3d8fb}
+  .box.tech .bt{color:#4348c7} .box.tech .bt::before{background:var(--tech)}
+  .box.note{background:#f0f7ff; border-color:#cfe3fb}
+  .box.note .bt{color:var(--blue2)} .box.note .bt::before{background:var(--blue2)}
+  .box.warn{background:#fff4ed; border-color:#ffd9bf}
+  .box.warn .bt{color:#c2410c} .box.warn .bt::before{background:#ea580c}
+
+  /* demo / lab / hw */
+  .block{border-radius:var(--radius); padding:18px 20px; border:1px solid var(--line); background:#fff}
+  .block > .hd{display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; margin-bottom:6px}
+  .block .badge{font-size:12px; font-weight:800; color:#fff; padding:3px 10px; border-radius:999px}
+  .block.demo{border-inline-start:6px solid var(--demo); background:#f1faf3}
+  .block.demo .badge{background:var(--demo)} .block.demo .hd{color:#15803d}
+  .block.lab{border-inline-start:6px solid var(--lab); background:#fff8ee}
+  .block.lab .badge{background:var(--lab)} .block.lab .hd{color:#b45309}
+  .block.hw{border-inline-start:6px solid var(--hw); background:#f6f1fe}
+  .block.hw .badge{background:var(--hw)} .block.hw .hd{color:#6b21a8}
+  .steps{counter-reset:st; list-style:none; padding:0; margin:8px 0 0}
+  .steps > li{position:relative; padding:4px 40px 14px 0; margin:0}
+  .steps > li::before{counter-increment:st; content:counter(st); position:absolute; inset-inline-start:0; top:0;
+    width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff; font-weight:800; font-size:14px;
+    display:flex; align-items:center; justify-content:center}
+  .block.demo .steps>li::before{background:var(--demo)} .block.lab .steps>li::before{background:var(--lab)}
+  .block.hw .steps>li::before{background:var(--hw)}
+  .steps > li:not(:last-child){border-inline-start:2px dashed #d7dee7; margin-inline-start:13px}
+  .steps b{color:var(--navy)}
+
+  /* code */
+  pre{direction:ltr; text-align:left; background:var(--code-bg); color:var(--code-ink); border-radius:12px;
+    padding:14px 16px; overflow-x:auto; font-family:"JetBrains Mono",monospace; font-size:14px; line-height:1.55; margin:10px 0;
+    border:1px solid #143049}
+  pre .c{color:#7fa7c7}
+  pre .k{color:#ffb86c}
+  pre .s{color:#a5e6a5}
+  pre .o{color:#9fd0ff}
+  .filename{direction:ltr; text-align:left; font-family:"JetBrains Mono",monospace; font-size:12px; color:#9fb6cb;
+    background:#0b2233; border:1px solid #143049; border-bottom:0; border-radius:10px 10px 0 0; padding:6px 12px; margin:10px 0 -10px; display:inline-block}
+
+  /* tables */
+  table{width:100%; border-collapse:collapse; direction:rtl; background:#fff; border-radius:12px; overflow:hidden; margin:10px 0; font-size:16px}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:right; vertical-align:top}
+  th{background:var(--blue); color:#fff; font-weight:700}
+  tr:nth-child(even) td{background:#f4f8fc}
+  .agenda td.t{white-space:nowrap; font-weight:700; color:var(--blue2); direction:ltr; unicode-bidi:isolate; text-align:right; width:130px}
+
+  /* flow */
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; direction:ltr; justify-content:center; margin:14px 0}
+  .flow .n{background:#fff; border:2px solid var(--blue2); color:var(--navy); border-radius:10px; padding:8px 14px; font-weight:700; font-size:15px}
+  .flow .a{color:var(--accent); font-weight:800; font-size:20px}
+
+  /* build map */
+  .buildmap{position:relative; display:flex; justify-content:space-between; direction:rtl; margin:18px 6px 8px}
+  .buildmap::before{content:""; position:absolute; top:21px; inset-inline:24px; height:3px; background:#cdd7e2}
+  .bm{position:relative; width:12%; text-align:center}
+  .bm .dot{width:44px; height:44px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:16px; border:3px solid #cdd7e2; background:#fff; color:#9aa6b2}
+  .bm .lab2{font-size:12px; margin-top:7px; color:#9aa6b2; font-weight:700; line-height:1.2}
+  .bm.done .dot{background:#16a34a; border-color:#16a34a; color:#fff}
+  .bm.done .lab2{color:#15803d}
+  .bm.now .dot{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 0 5px rgba(255,153,0,.22)}
+  .bm.now .lab2{color:var(--navy)}
+
+  @media (max-width:760px){ .two{grid-template-columns:1fr} .cover h1{font-size:34px} .slide h2{font-size:24px} }
+  @media print{
+    body{overflow:visible}
+    .topbar,.navbar,.pbar{display:none}
+    .stage{position:static; overflow:visible; top:0; bottom:0}
+    .slide{position:static !important; display:block !important; min-height:auto; page-break-after:always; padding:0 0 24px; border-bottom:2px solid #ccc}
+    .s-wrap{transform:none !important}
+    .cover,.divider{color:#000; background:#fff !important}
+    .cover h1,.divider h2{color:var(--navy)}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">מקוד לענן</span><span class="sep">·</span>
+  <span class="topic" id="topic">מפגש 7 — CD</span>
+  <span class="spacer"></span>
+  <button onclick="toggleFs()">מסך מלא</button>
+</div>
+<div class="pbar"><i id="pbar"></i></div>
+
+<div class="stage" id="stage">
+
+  <!-- 1 · COVER -->
+  <section class="slide cover" data-topic="פתיחה">
+    <div class="s-wrap">
+      <div class="eyebrow">מפגש 7 מתוך 8 · שלב <span class="en">Deploy</span> · 4</div>
+      <h1>אספקה רציפה<br><span class="accent">CD: פריסה אוטומטית ל-AWS</span></h1>
+      <p class="sub">יש לנו <span class="en">CI</span>, <span class="en">image</span> ב-<span class="en">ECR</span>, ותשתית כקוד. היום נחבר הכול לצינור אחד: <b><span class="en">push</span> ל-<span class="en">main</span> → בנייה → דחיפה → <span class="en">terraform apply</span> → פריסה</b> — אוטומטית, בלי מפתחות קבועים, עם שער אישור.</p>
+      <div class="pills">
+        <span class="pill">16:00–19:00</span>
+        <span class="pill"><span class="en">CD</span></span>
+        <span class="pill"><span class="en">GitHub OIDC</span></span>
+        <span class="pill"><span class="en">Environments</span></span>
+        <span class="pill"><span class="en">Smoke tests</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · AGENDA -->
+  <section class="slide" data-topic="אג׳נדה">
+    <div class="s-wrap">
+      <span class="kicker">לוח הזמנים של היום</span>
+      <h2>מה נעשה ב-3 השעות</h2>
+      <div class="grid two">
+        <div class="card">
+          <table class="agenda">
+            <tr><th style="width:130px">זמן</th><th>פעילות</th></tr>
+            <tr><td class="t">16:00–16:15</td><td>חזרה ויעדי המפגש</td></tr>
+            <tr><td class="t">16:15–17:30</td><td><span class="en">CD</span>, <span class="en">OIDC</span> ואבטחת פריסה</td></tr>
+            <tr><td class="t">17:30–17:40</td><td>הפסקה</td></tr>
+            <tr><td class="t">17:40–18:30</td><td>כתיבת <code>cd.yml</code> + הדגמת פריסה</td></tr>
+            <tr><td class="t">18:30–18:55</td><td>מעבדה עצמאית</td></tr>
+            <tr><td class="t">18:55–19:00</td><td>סיכום ומשימת בית</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">בסוף המפגש תדעו</h3>
+          <ul>
+            <li>להבין <span class="en">CD</span>: <span class="en">environments</span>, אישורים, <span class="en">rollback</span>.</li>
+            <li>לחבר את <span class="en">GitHub</span> ל-<span class="en">AWS</span> עם <span class="en">OIDC</span> — בלי מפתחות.</li>
+            <li>לכתוב <code>cd.yml</code> שבונה, דוחף, מקים ומפרס.</li>
+            <li>להוסיף שער אישור ידני ל-<span class="en">production</span>.</li>
+            <li>לאמת פריסה עם <span class="en">smoke test</span>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · WHERE WE ARE -->
+  <section class="slide" data-topic="איפה אנחנו בבנייה">
+    <div class="s-wrap">
+      <span class="kicker">מפת הבנייה של הפרויקט</span>
+      <h2>איפה אנחנו בבניית ה-<span class="en">Tasks API</span></h2>
+      <div class="buildmap">
+        <div class="bm done"><div class="dot">1</div><div class="lab2">Code</div></div>
+        <div class="bm done"><div class="dot">2</div><div class="lab2">CI</div></div>
+        <div class="bm done"><div class="dot">3</div><div class="lab2">Docker</div></div>
+        <div class="bm done"><div class="dot">4</div><div class="lab2">AWS</div></div>
+        <div class="bm done"><div class="dot">5</div><div class="lab2">Data</div></div>
+        <div class="bm done"><div class="dot">6</div><div class="lab2">IaC</div></div>
+        <div class="bm now"><div class="dot">7</div><div class="lab2">CD</div></div>
+        <div class="bm"><div class="dot">8</div><div class="lab2">Observe</div></div>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <div class="box simple"><div class="bt">היום — שלב 7: <span class="en">CD</span></div><p style="margin:0">מחברים את כל החלקים שבנינו לצינור פריסה אחד: <span class="en">push</span> ל-<span class="en">main</span> מפעיל בנייה, דחיפה ל-<span class="en">ECR</span>, <span class="en">terraform apply</span> ופריסה — בלי ידיים.</p></div>
+        <div class="box note"><div class="bt">כבר מאחורינו · הבא</div><p style="margin:0"><b>מפגשים 2–6:</b> <span class="en">CI</span>, <span class="en">Docker</span>, <span class="en">ECR</span> ו-<span class="en">Terraform</span> — כולם ידניים עד כה. <b>מפגש 8:</b> נוסיף ניטור (<span class="en">Observability</span>) לשירות הפרוס.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · DIVIDER 1 -->
+  <section class="slide divider" data-topic="חלק 1 · מ-CI ל-CD">
+    <div class="s-wrap">
+      <div class="pnum">חלק 1</div>
+      <h2>מ-<span class="en">CI</span> ל-<span class="en">CD</span></h2>
+      <p>בנינו ובדקנו אוטומטית (מפגש 2). עכשיו ניקח את זה עד הסוף — עד הפריסה לענן.</p>
+    </div>
+  </section>
+
+  <!-- 5 · WHAT IS CD -->
+  <section class="slide" data-topic="חלק 1 · מ-CI ל-CD">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>מה זה <span class="en">CD</span>?</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">המשך טבעי של <span class="en">CI</span>: אחרי שהקוד נבנה ונבדק, הצינור ממשיך אוטומטית גם <b>לפרוס</b> אותו לענן — בלי צעדים ידניים.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">Continuous Delivery</span>: כל <span class="en">commit</span> שעובר מוכן לשחרור בלחיצה. <span class="en">Continuous Deployment</span>: משוחרר אוטומטית. אנחנו נשלב — אוטומטי, עם שער אישור ל-<span class="en">production</span>.</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt">למה זה משנה</div>פחות טעויות אנוש, פריסות מהירות ועקביות, ויכולת לחזור אחורה בקלות. זה הלב של <span class="en">DevOps</span>.</div>
+    </div>
+  </section>
+
+  <!-- 6 · PIPELINE VISION -->
+  <section class="slide" data-topic="חלק 1 · מ-CI ל-CD">
+    <div class="s-wrap">
+      <span class="kicker">החיבור הגדול</span>
+      <h2>כל מה שבנינו — בצינור אחד</h2>
+      <div class="flow">
+        <span class="n">push to main</span><span class="a">→</span>
+        <span class="n">build image</span><span class="a">→</span>
+        <span class="n">push ECR</span><span class="a">→</span>
+        <span class="n">terraform apply</span><span class="a">→</span>
+        <span class="n">deploy</span><span class="a">→</span>
+        <span class="n">smoke test</span>
+      </div>
+      <ul>
+        <li><b><span class="en">CI</span></b> (מפגש 2) · <b><span class="en">Docker</span></b> (3) · <b><span class="en">ECR</span></b> (6) · <b><span class="en">Terraform</span></b> (6) — כולם כבר קיימים.</li>
+        <li>היום רק <b>מחברים</b> אותם ל-<code>cd.yml</code> אחד שרץ על כל <span class="en">push</span> ל-<span class="en">main</span>.</li>
+      </ul>
+      <div class="box note"><div class="bt">השאלה הראשונה</div>איך ה-<span class="en">pipeline</span> מקבל הרשאה ל-<span class="en">AWS</span> בלי לאחסן מפתחות סודיים? התשובה: <span class="en">OIDC</span>.</div>
+    </div>
+  </section>
+
+  <!-- 7 · DIVIDER 2 -->
+  <section class="slide divider" data-topic="חלק 2 · OIDC">
+    <div class="s-wrap">
+      <div class="pnum">חלק 2</div>
+      <h2>אימות מאובטח: <span class="en">OIDC</span></h2>
+      <p>איך לתת ל-<span class="en">GitHub Actions</span> גישה ל-<span class="en">AWS</span> — בלי מפתחות קבועים בכלל.</p>
+    </div>
+  </section>
+
+  <!-- 8 · KEYS PROBLEM -->
+  <section class="slide" data-topic="חלק 2 · OIDC">
+    <div class="s-wrap">
+      <span class="kicker">הבעיה</span>
+      <h2>למה לא לשמור מפתחות גישה ב-<span class="en">CI</span>?</h2>
+      <ul>
+        <li><b>מפתחות ארוכי-טווח דולפים:</b> אם <span class="en">secret</span> נחשף — לתוקף יש גישה לחשבון.</li>
+        <li><b>צריך לסובב אותם</b> ידנית, ולעיתים שוכחים.</li>
+        <li>מפתח אחד = הרבה הרשאות = סיכון גדול.</li>
+      </ul>
+      <div class="box simple"><div class="bt">הפתרון: <span class="en">OIDC</span></div><p style="margin:0"><span class="en">GitHub</span> מוכיח ל-<span class="en">AWS</span> "אני באמת ה-<span class="en">workflow</span> הזה, מה-<span class="en">repo</span> הזה" — ו-<span class="en">AWS</span> נותן <b>הרשאות זמניות</b> שפגות מיד. אין מה לאחסן ואין מה לדלוף.</p></div>
+    </div>
+  </section>
+
+  <!-- 9 · HOW OIDC WORKS -->
+  <section class="slide" data-topic="חלק 2 · OIDC">
+    <div class="s-wrap">
+      <span class="kicker">איך זה עובד</span>
+      <h2><span class="en">GitHub OIDC</span> ↔ <span class="en">IAM Role</span></h2>
+      <div class="flow">
+        <span class="n">GitHub job</span><span class="a">— JWT חתום →</span>
+        <span class="n">AWS STS</span><span class="a">— בודק trust →</span>
+        <span class="n">הרשאות זמניות</span>
+      </div>
+      <div class="grid two" style="margin-top:8px">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">ה-<span class="en">job</span> מקבל "תעודת זהות" חתומה מ-<span class="en">GitHub</span>, מציג אותה ל-<span class="en">AWS</span>, ומקבל מפתחות זמניים לאותה ריצה בלבד.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">AssumeRoleWithWebIdentity</span>: ה-<span class="en">JWT</span> נבדק מול <span class="en">OIDC provider</span> רשום, וה-<span class="en">trust policy</span> של ה-<span class="en">role</span> מגבילה ל-<span class="en">repo</span> ולענף מסוימים (<code>repo:jenkins-ravtech1/task-api:ref:refs/heads/main</code>).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · DEMO oidc role -->
+  <section class="slide" data-topic="הדגמה · תפקיד OIDC">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> מגדירים את ה-<span class="en">OIDC role</span> (ב-<span class="en">Terraform</span>)</div>
+        <span class="filename">infra/iam.tf (תמצית)</span>
+<pre><span class="k">resource</span> <span class="s">"aws_iam_openid_connect_provider"</span> <span class="s">"github"</span> {
+  url             = <span class="s">"https://token.actions.githubusercontent.com"</span>
+  client_id_list  = [<span class="s">"sts.amazonaws.com"</span>]
+}
+<span class="k">resource</span> <span class="s">"aws_iam_role"</span> <span class="s">"deploy"</span> {
+  <span class="c"># trust: רק ה-repo והענף שלנו רשאים לקחת את התפקיד</span>
+  <span class="c"># condition: repo:jenkins-ravtech1/task-api:ref:refs/heads/main</span>
+  <span class="c"># הרשאות: ECR push, terraform/state, SSM deploy</span>
+}</pre>
+        <div class="box note"><div class="bt">התוצאה</div>נוצר תפקיד שרק ה-<span class="en">workflow</span> שלנו (מה-<span class="en">repo</span> ומענף <span class="en">main</span>) יכול "ללבוש" — בלי שום מפתח שמור.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · DIVIDER 3 -->
+  <section class="slide divider" data-topic="חלק 3 · בונים CD">
+    <div class="s-wrap">
+      <div class="pnum">חלק 3</div>
+      <h2>בונים את צינור ה-<span class="en">CD</span></h2>
+      <p>עכשיו כותבים את <code>cd.yml</code> — מחברים בנייה, דחיפה, <span class="en">apply</span> ופריסה.</p>
+    </div>
+  </section>
+
+  <!-- 12 · CD CONCEPTS -->
+  <section class="slide" data-topic="חלק 3 · בונים CD">
+    <div class="s-wrap">
+      <span class="kicker">מושגים</span>
+      <h2><span class="en">Environments</span>, אישורים, <span class="en">rollback</span></h2>
+      <table>
+        <tr><th>מושג</th><th>מה זה</th></tr>
+        <tr><td><span class="en">Environment</span></td><td>יעד פריסה (<span class="en">staging</span>/<span class="en">production</span>) עם כללים משלו</td></tr>
+        <tr><td><span class="en">Approval</span></td><td>שער ידני — אדם מאשר לפני פריסה ל-<span class="en">production</span></td></tr>
+        <tr><td><span class="en">Promotion</span></td><td>קידום אותה גרסה מסביבה לסביבה</td></tr>
+        <tr><td><span class="en">Rollback</span></td><td>חזרה לגרסה קודמת אם משהו נשבר</td></tr>
+      </table>
+      <div class="box note"><div class="bt">אצלנו</div>נגדיר <span class="en">environment</span> בשם <span class="en">production</span> שדורש <b>אישור reviewer</b> לפני שהפריסה רצה — בלם בטיחות אנושי.</div>
+    </div>
+  </section>
+
+  <!-- 13 · CD.YML part 1 -->
+  <section class="slide" data-topic="חלק 3 · קוד">
+    <div class="s-wrap">
+      <span class="kicker">קוד · cd.yml (1/3)</span>
+      <h2>טריגר, הרשאות, ואימות <span class="en">OIDC</span></h2>
+      <span class="filename">.github/workflows/cd.yml</span>
+<pre><span class="o">name</span>: CD
+<span class="o">on</span>:
+  <span class="o">push</span>: { <span class="o">branches</span>: [ main ] }
+  <span class="o">workflow_dispatch</span>:
+<span class="o">permissions</span>:
+  <span class="o">id-token</span>: write      <span class="c"># נדרש ל-OIDC</span>
+  <span class="o">contents</span>: read
+<span class="o">jobs</span>:
+  <span class="o">deploy</span>:
+    <span class="o">runs-on</span>: ubuntu-latest
+    <span class="o">environment</span>: production   <span class="c"># דורש אישור</span>
+    <span class="o">steps</span>:
+      - <span class="o">uses</span>: actions/checkout@v5
+      - <span class="o">uses</span>: aws-actions/configure-aws-credentials@v4
+        <span class="o">with</span>:
+          <span class="o">role-to-assume</span>: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          <span class="o">aws-region</span>: ${{ vars.AWS_REGION }}</pre>
+    </div>
+  </section>
+
+  <!-- 14 · CD.YML part 2 -->
+  <section class="slide" data-topic="חלק 3 · קוד">
+    <div class="s-wrap">
+      <span class="kicker">קוד · cd.yml (2/3)</span>
+      <h2>בנייה ודחיפה ל-<span class="en">ECR</span> + <span class="en">apply</span></h2>
+      <span class="filename">.github/workflows/cd.yml (steps)</span>
+<pre>      - <span class="o">uses</span>: aws-actions/amazon-ecr-login@v2
+      - <span class="o">name</span>: Build and push image
+        <span class="o">run</span>: |
+          docker build -f docker/Dockerfile -t $ECR_URI:$GITHUB_SHA .
+          docker push $ECR_URI:$GITHUB_SHA
+      - <span class="o">name</span>: Terraform apply
+        <span class="o">run</span>: |
+          terraform -chdir=infra init
+          terraform -chdir=infra apply -auto-approve \
+            -var image_tag=$GITHUB_SHA</pre>
+      <p class="muted">אותו <span class="en">multi-stage build</span> ו-<span class="en">Terraform</span> ממפגש 6 — עכשיו רצים אוטומטית בצינור.</p>
+    </div>
+  </section>
+
+  <!-- 15 · CD.YML part 3 -->
+  <section class="slide" data-topic="חלק 3 · קוד">
+    <div class="s-wrap">
+      <span class="kicker">קוד · cd.yml (3/3)</span>
+      <h2>פריסה ל-<span class="en">EC2</span> + <span class="en">smoke test</span></h2>
+      <span class="filename">.github/workflows/cd.yml (steps)</span>
+<pre>      - <span class="o">name</span>: Deploy to EC2 (SSM)
+        <span class="o">run</span>: |
+          aws ssm send-command \
+            --document-name AWS-RunShellScript \
+            --targets Key=tag:app,Values=tasks-api \
+            --parameters 'commands=["docker pull $ECR_URI:'$GITHUB_SHA'","systemctl restart tasks-api"]'
+      - <span class="o">name</span>: Smoke test
+        <span class="o">run</span>: ./scripts/smoke-test.sh "$API_URL"   <span class="c"># נכשל אם /health אדום</span></pre>
+      <div class="box note"><div class="bt">למה <span class="en">SSM</span> ולא <span class="en">SSH</span></div>פריסה דרך <span class="en">SSM</span> לא דורשת מפתחות <span class="en">SSH</span> בצינור — עקבי עם גישת ה-<span class="en">OIDC</span> ללא מפתחות.</div>
+    </div>
+  </section>
+
+  <!-- 16 · DEMO full cd -->
+  <section class="slide" data-topic="הדגמה · בניית שלב 7">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> פריסה אוטומטית מלאה</div>
+        <ol class="steps">
+          <li><b>גרסת הייחוס:</b> <code>git checkout v7-cd</code> (כולל <code>cd.yml</code> וה-<span class="en">OIDC role</span>).</li>
+          <li><b>מגדירים <span class="en">repo variables</span></b> (לא <span class="en">secrets</span>!): <code>AWS_DEPLOY_ROLE_ARN</code>, <code>AWS_REGION</code>.</li>
+          <li><b>דוחפים שינוי ל-<span class="en">main</span></b> (או ממזגים <span class="en">PR</span>) — ה-<span class="en">CD</span> מתחיל.</li>
+          <li><b>מאשרים</b> את סביבת ה-<span class="en">production</span> (שער האישור).</li>
+          <li><b>צופים</b>: בנייה → דחיפה ל-<span class="en">ECR</span> → <span class="en">apply</span> → פריסה → <span class="en">smoke test</span> ירוק. השירות בענן מעודכן.</li>
+        </ol>
+        <div class="box note"><div class="bt">אימות</div><code>curl http://&lt;api_url&gt;/health</code> מראה את הגרסה החדשה (<code>APP_VERSION</code> = ה-<span class="en">commit</span>).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17 · ROLLBACK -->
+  <section class="slide" data-topic="חלק 3 · rollback">
+    <div class="s-wrap">
+      <span class="kicker">כשמשהו משתבש</span>
+      <h2><span class="en">Rollback</span> — חזרה לאחור</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">אם פריסה חדשה שבורה — חוזרים מהר לגרסה הקודמת שעבדה, במקום לתקן בלחץ.</p></div>
+        <div class="box tech"><div class="bt">איך אצלנו</div><p style="margin:0">כל <span class="en">image</span> מתויג ב-<span class="en">commit SHA</span>. <span class="en">rollback</span> = לפרוס מחדש <span class="en">tag</span> קודם (להפעיל את ה-<span class="en">deploy</span> עם <span class="en">SHA</span> ישן). ה-<span class="en">smoke test</span> שומר שלא נשאיר גרסה שבורה.</p></div>
+      </div>
+      <div class="box warn" style="margin-top:14px"><div class="bt">עיקרון</div>פריסות קטנות ותכופות = <span class="en">rollback</span> קל. שינוי ענק = סיכון גדול.</div>
+    </div>
+  </section>
+
+  <!-- 18 · LAB -->
+  <section class="slide" data-topic="מעבדה">
+    <div class="s-wrap">
+      <div class="block lab">
+        <div class="hd"><span class="badge">מעבדה</span> בנו את שלב 7 — 25 דקות</div>
+        <ol class="steps">
+          <li><b>ודאו</b> שה-<span class="en">OIDC provider</span> וה-<span class="en">deploy role</span> קיימים (ב-<span class="en">Terraform</span>).</li>
+          <li><b>הגדירו</b> <code>AWS_DEPLOY_ROLE_ARN</code> ו-<code>AWS_REGION</code> כ-<span class="en">repo variables</span>.</li>
+          <li><b>הוסיפו</b> את <code>.github/workflows/cd.yml</code>.</li>
+          <li><b>צרו <span class="en">environment</span></b> בשם <span class="en">production</span> עם <span class="en">required reviewer</span>.</li>
+          <li><b>מזגו <span class="en">PR</span> ל-<span class="en">main</span></b>, אשרו את הפריסה, וצפו בצינור עד ל-<span class="en">smoke test</span> ירוק.</li>
+        </ol>
+        <div class="box note" style="margin-top:6px"><div class="bt">סימן הצלחה</div><span class="en">push</span> ל-<span class="en">main</span> מפרס לבד את הגרסה החדשה לענן, אחרי אישור — בלי מפתחות קבועים בכלל.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 19 · HW -->
+  <section class="slide" data-topic="משימת בית">
+    <div class="s-wrap">
+      <div class="block hw">
+        <div class="hd"><span class="badge">משימת בית</span> לפני מפגש 8</div>
+        <ol class="steps">
+          <li><b>תיעוד:</b> כתבו ב-<code>README</code> איך הצינור עובד ואיך מפרסים (כולל ה-<span class="en">IaC</span>).</li>
+          <li><b>פריסה דרך <span class="en">PR</span>:</b> בצעו שינוי קטן, פתחו <span class="en">PR</span>, מזגו, ואשרו פריסה — ראו את הגרסה משתנה.</li>
+          <li><b>חשבו:</b> השירות רץ בענן ומתעדכן לבד — אבל איך נדע אם הוא בריא, מהיר, או נופל? זה מפגש 8.</li>
+        </ol>
+        <div class="box warn" style="margin-top:6px"><div class="bt">היגיינת עלויות</div>אם הקמתם תשתית לבדיקה — זכרו <code>terraform destroy</code> בסוף.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 20 · RECAP + NEXT -->
+  <section class="slide" data-topic="סיכום">
+    <div class="s-wrap">
+      <span class="kicker">סיכום מפגש 7</span>
+      <h2>מה בנינו, ולאן ממשיכים</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3 style="margin-top:0">שלב 7 הושלם — <span class="en">CD</span></h3>
+          <ul>
+            <li>חיברנו <span class="en">GitHub</span> ל-<span class="en">AWS</span> עם <span class="en">OIDC</span> (בלי מפתחות).</li>
+            <li>בנינו צינור פריסה מלא עם שער אישור ו-<span class="en">smoke test</span>.</li>
+            <li><span class="en">push</span> ל-<span class="en">main</span> מפרס עכשיו אוטומטית לענן.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">הבא — מפגש 8: <span class="en">Observability</span></h3>
+          <ul>
+            <li><span class="en">Logs</span>, <span class="en">Metrics</span>, <span class="en">Traces</span> ב-<span class="en">CloudWatch</span> ו-<span class="en">X-Ray</span>.</li>
+            <li>נראה את כל השרשרת חיה — וה-<span class="en">Capstone</span> המסכם.</li>
+          </ul>
+          <div class="box warn" style="margin-top:6px"><div class="bt">לא לשכוח</div>צינור ה-<span class="en">CD</span> עובד, וה-<code>README</code> מתעד אותו.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 21 · END -->
+  <section class="slide cover" data-topic="סוף">
+    <div class="s-wrap">
+      <div class="eyebrow">מפגש 7 הושלם · שלב <span class="en">Deploy</span> · 4</div>
+      <h1>שאלות?<br><span class="accent">נתראה במפגש 8 — Observability + Capstone</span></h1>
+      <p class="sub">תזכורת: <code>cd.yml</code> מפרס מ-<span class="en">main</span> עם <span class="en">OIDC</span>, שער אישור ו-<span class="en">smoke test</span>.</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button id="prev" onclick="go(-1)">→ הקודם</button>
+  <div style="text-align:center"><div class="count" id="count">1 / 1</div><div class="hint">מקשים: ← הבא · → הקודם</div></div>
+  <button id="next" class="primary" onclick="go(1)">הבא ←</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const stage = document.getElementById('stage');
+  let i = 0;
+  function clamp(n){ return Math.max(0, Math.min(slides.length-1, n)); }
+  function fit(){
+    const wrap = slides[i] && slides[i].querySelector('.s-wrap');
+    if(!wrap) return;
+    wrap.style.transform='none';
+    const pad=22;
+    const availH = stage.clientHeight - pad*2;
+    const availW = stage.clientWidth - pad*2;
+    const h = wrap.offsetHeight, w = wrap.offsetWidth;
+    if(!h || !w) return;
+    const scale = Math.min(1, availH/h, availW/w);
+    wrap.style.transform = scale<0.999 ? 'scale('+scale.toFixed(4)+')' : 'none';
+  }
+  function render(){
+    slides.forEach((s,k)=> s.classList.toggle('active', k===i));
+    document.getElementById('count').textContent = (i+1)+' / '+slides.length;
+    document.getElementById('pbar').style.width = ((i+1)/slides.length*100)+'%';
+    document.getElementById('topic').textContent = 'מפגש 7 — ' + (slides[i].dataset.topic||'');
+    document.getElementById('prev').disabled = (i===0);
+    document.getElementById('next').disabled = (i===slides.length-1);
+    requestAnimationFrame(fit);
+    history.replaceState(null,'', '#'+(i+1));
+  }
+  function go(d){ i = clamp(i+d); render(); }
+  function jump(n){ i = clamp(n); render(); }
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowLeft' || e.key===' ' || e.key==='PageDown'){ e.preventDefault(); go(1); }
+    else if(e.key==='ArrowRight' || e.key==='PageUp'){ e.preventDefault(); go(-1); }
+    else if(e.key==='Home'){ jump(0); }
+    else if(e.key==='End'){ jump(slides.length-1); }
+  });
+  function toggleFs(){ if(!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); } else { document.exitFullscreen && document.exitFullscreen(); } }
+  window.addEventListener('resize', ()=>requestAnimationFrame(fit));
+  document.addEventListener('fullscreenchange', ()=>requestAnimationFrame(fit));
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>requestAnimationFrame(fit)); }
+  const start = parseInt((location.hash||'').replace('#',''),10);
+  if(!isNaN(start)) i = clamp(start-1);
+  render();
+</script>
+</body>
+</html>

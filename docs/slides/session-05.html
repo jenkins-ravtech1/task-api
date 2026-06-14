@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מפגש 5 · נתונים ואירועים — Deploy II</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0f2e4d; --blue:#1F4E79; --blue2:#2E5496; --accent:#ff9900;
+    --bg:#0f1722; --stage:#eef2f7; --card:#ffffff; --ink:#1a2330; --muted:#5b6776; --line:#dfe6ee;
+    --simple:#0ea5b7; --tech:#6366f1; --demo:#16a34a; --lab:#ff9900; --hw:#7c3aed;
+    --code-bg:#0b2233; --code-ink:#e6f0fa;
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  html{direction:rtl}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); overflow:hidden;
+    font-family:"Heebo","Segoe UI","Arial",sans-serif; direction:rtl; text-align:right;
+  }
+  code,.en,kbd{direction:ltr; unicode-bidi:isolate;}
+  code{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace; font-size:.85em;
+       background:#eef3f9; color:#16324f; padding:.06em .42em; border-radius:6px; border:1px solid #dbe6f1;}
+  kbd{font-family:"JetBrains Mono",monospace; font-size:.8em; background:#1f2937; color:#e5e7eb;
+      border:1px solid #374151; border-bottom-width:2px; border-radius:6px; padding:1px 7px}
+
+  /* chrome */
+  .topbar{position:fixed; top:0; inset-inline:0; height:50px; z-index:30;
+    background:linear-gradient(90deg,var(--navy),var(--blue2)); color:#fff;
+    display:flex; align-items:center; gap:14px; padding:0 18px; box-shadow:0 2px 10px rgba(0,0,0,.25)}
+  .topbar .brand{font-weight:800; font-size:15px}
+  .topbar .sep{opacity:.5}
+  .topbar .topic{font-size:14px; opacity:.92; font-weight:500}
+  .topbar .spacer{flex:1}
+  .topbar button{background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.25);
+    border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer; font-family:inherit}
+  .topbar button:hover{background:rgba(255,255,255,.26)}
+  .pbar{position:fixed; top:50px; inset-inline:0; height:4px; background:#cdd7e2; z-index:30}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),#ffc46b); transition:width .25s}
+
+  .stage{position:fixed; top:54px; bottom:58px; inset-inline:0; overflow:hidden; background:var(--stage)}
+  .navbar{position:fixed; bottom:0; inset-inline:0; height:58px; z-index:30; background:#fff;
+    border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 18px}
+  .navbar .count{font-weight:700; color:var(--muted); font-size:14px; direction:ltr; unicode-bidi:isolate}
+  .navbar .hint{font-size:12.5px; color:#9aa6b2}
+  .navbar button{font-family:inherit; cursor:pointer; border-radius:10px; padding:9px 18px; font-size:15px; font-weight:700;
+    border:1px solid var(--line); background:#fff; color:var(--navy)}
+  .navbar button.primary{background:var(--navy); color:#fff; border-color:var(--navy)}
+  .navbar button:disabled{opacity:.4; cursor:default}
+
+  /* slides */
+  .slide{display:none; position:absolute; inset:0; padding:18px 22px}
+  .slide.active{display:flex; align-items:center; justify-content:center; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+  .s-wrap{max-width:1000px; width:100%; margin:0 auto; transform-origin:center center}
+  .kicker{display:inline-block; font-size:13px; font-weight:700; color:var(--accent);
+    text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px}
+  .slide h2{font-size:30px; font-weight:800; color:var(--navy); margin:0 0 14px; line-height:1.2}
+  .slide h3{font-size:20px; font-weight:800; color:var(--blue2); margin:18px 0 8px}
+  .slide p{font-size:17.5px; line-height:1.6; margin:0 0 12px}
+  .slide ul,.slide ol{font-size:17px; line-height:1.6; margin:8px 0; padding-inline-start:24px}
+  .slide li{margin:7px 0}
+  .lead{font-size:19px; color:#33414f}
+  .muted{color:var(--muted)}
+
+  /* cover + divider */
+  .cover{background:radial-gradient(1200px 500px at 80% -10%,#1c476f 0,transparent 60%),linear-gradient(135deg,var(--navy),var(--blue) 70%); color:#fff}
+  .cover .eyebrow{font-size:15px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; font-weight:700}
+  .cover h1{font-size:46px; line-height:1.12; margin:10px 0 8px; font-weight:900}
+  .cover h1 .accent{color:var(--accent)}
+  .cover .sub{font-size:20px; opacity:.95; max-width:760px}
+  .cover .pills{margin-top:22px; display:flex; flex-wrap:wrap; gap:10px}
+  .cover .pill{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:8px 16px; font-size:14.5px}
+  .divider{background:linear-gradient(135deg,#13243a,#22507e); color:#fff}
+  .divider .pnum{font-size:18px; font-weight:700; color:var(--accent); letter-spacing:.1em}
+  .divider h2{color:#fff; font-size:40px; margin:6px 0 10px}
+  .divider p{font-size:19px; opacity:.92; max-width:720px}
+
+  /* cards / boxes */
+  .grid{display:grid; gap:16px}
+  .two{grid-template-columns:1fr 1fr}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:0 4px 16px rgba(15,46,77,.06)}
+  .box{border-radius:14px; padding:16px 18px; border:1px solid var(--line)}
+  .box .bt{font-weight:800; font-size:14px; margin-bottom:8px; display:flex; align-items:center; gap:8px}
+  .box .bt::before{content:""; width:10px; height:10px; border-radius:50%}
+  .box.simple{background:#e7f8fb; border-color:#bde9f0}
+  .box.simple .bt{color:#0b7c8c} .box.simple .bt::before{background:var(--simple)}
+  .box.tech{background:#eef0fe; border-color:#d3d8fb}
+  .box.tech .bt{color:#4348c7} .box.tech .bt::before{background:var(--tech)}
+  .box.note{background:#f0f7ff; border-color:#cfe3fb}
+  .box.note .bt{color:var(--blue2)} .box.note .bt::before{background:var(--blue2)}
+  .box.warn{background:#fff4ed; border-color:#ffd9bf}
+  .box.warn .bt{color:#c2410c} .box.warn .bt::before{background:#ea580c}
+
+  /* demo / lab / hw */
+  .block{border-radius:var(--radius); padding:18px 20px; border:1px solid var(--line); background:#fff}
+  .block > .hd{display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; margin-bottom:6px}
+  .block .badge{font-size:12px; font-weight:800; color:#fff; padding:3px 10px; border-radius:999px}
+  .block.demo{border-inline-start:6px solid var(--demo); background:#f1faf3}
+  .block.demo .badge{background:var(--demo)} .block.demo .hd{color:#15803d}
+  .block.lab{border-inline-start:6px solid var(--lab); background:#fff8ee}
+  .block.lab .badge{background:var(--lab)} .block.lab .hd{color:#b45309}
+  .block.hw{border-inline-start:6px solid var(--hw); background:#f6f1fe}
+  .block.hw .badge{background:var(--hw)} .block.hw .hd{color:#6b21a8}
+  .steps{counter-reset:st; list-style:none; padding:0; margin:8px 0 0}
+  .steps > li{position:relative; padding:4px 40px 14px 0; margin:0}
+  .steps > li::before{counter-increment:st; content:counter(st); position:absolute; inset-inline-start:0; top:0;
+    width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff; font-weight:800; font-size:14px;
+    display:flex; align-items:center; justify-content:center}
+  .block.demo .steps>li::before{background:var(--demo)} .block.lab .steps>li::before{background:var(--lab)}
+  .block.hw .steps>li::before{background:var(--hw)}
+  .steps > li:not(:last-child){border-inline-start:2px dashed #d7dee7; margin-inline-start:13px}
+  .steps b{color:var(--navy)}
+
+  /* code */
+  pre{direction:ltr; text-align:left; background:var(--code-bg); color:var(--code-ink); border-radius:12px;
+    padding:14px 16px; overflow-x:auto; font-family:"JetBrains Mono",monospace; font-size:14px; line-height:1.55; margin:10px 0;
+    border:1px solid #143049}
+  pre .c{color:#7fa7c7}
+  pre .k{color:#ffb86c}
+  pre .s{color:#a5e6a5}
+  pre .o{color:#9fd0ff}
+  .filename{direction:ltr; text-align:left; font-family:"JetBrains Mono",monospace; font-size:12px; color:#9fb6cb;
+    background:#0b2233; border:1px solid #143049; border-bottom:0; border-radius:10px 10px 0 0; padding:6px 12px; margin:10px 0 -10px; display:inline-block}
+
+  /* tables */
+  table{width:100%; border-collapse:collapse; direction:rtl; background:#fff; border-radius:12px; overflow:hidden; margin:10px 0; font-size:16px}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:right; vertical-align:top}
+  th{background:var(--blue); color:#fff; font-weight:700}
+  tr:nth-child(even) td{background:#f4f8fc}
+  .agenda td.t{white-space:nowrap; font-weight:700; color:var(--blue2); direction:ltr; unicode-bidi:isolate; text-align:right; width:130px}
+
+  /* flow */
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; direction:ltr; justify-content:center; margin:14px 0}
+  .flow .n{background:#fff; border:2px solid var(--blue2); color:var(--navy); border-radius:10px; padding:8px 14px; font-weight:700; font-size:15px}
+  .flow .a{color:var(--accent); font-weight:800; font-size:20px}
+
+  /* build map */
+  .buildmap{position:relative; display:flex; justify-content:space-between; direction:rtl; margin:18px 6px 8px}
+  .buildmap::before{content:""; position:absolute; top:21px; inset-inline:24px; height:3px; background:#cdd7e2}
+  .bm{position:relative; width:12%; text-align:center}
+  .bm .dot{width:44px; height:44px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:16px; border:3px solid #cdd7e2; background:#fff; color:#9aa6b2}
+  .bm .lab2{font-size:12px; margin-top:7px; color:#9aa6b2; font-weight:700; line-height:1.2}
+  .bm.done .dot{background:#16a34a; border-color:#16a34a; color:#fff}
+  .bm.done .lab2{color:#15803d}
+  .bm.now .dot{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 0 5px rgba(255,153,0,.22)}
+  .bm.now .lab2{color:var(--navy)}
+
+  @media (max-width:760px){ .two{grid-template-columns:1fr} .cover h1{font-size:34px} .slide h2{font-size:24px} }
+  @media print{
+    body{overflow:visible}
+    .topbar,.navbar,.pbar{display:none}
+    .stage{position:static; overflow:visible; top:0; bottom:0}
+    .slide{position:static !important; display:block !important; min-height:auto; page-break-after:always; padding:0 0 24px; border-bottom:2px solid #ccc}
+    .s-wrap{transform:none !important}
+    .cover,.divider{color:#000; background:#fff !important}
+    .cover h1,.divider h2{color:var(--navy)}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">מקוד לענן</span><span class="sep">·</span>
+  <span class="topic" id="topic">מפגש 5 — נתונים ואירועים</span>
+  <span class="spacer"></span>
+  <button onclick="toggleFs()">מסך מלא</button>
+</div>
+<div class="pbar"><i id="pbar"></i></div>
+
+<div class="stage" id="stage">
+
+  <!-- 1 · COVER -->
+  <section class="slide cover" data-topic="פתיחה">
+    <div class="s-wrap">
+      <div class="eyebrow">מפגש 5 מתוך 8 · שלב <span class="en">Deploy</span> · 2</div>
+      <h1>נתונים ואירועים<br><span class="accent">DynamoDB, SQS/SNS ו-LocalStack</span></h1>
+      <p class="sub">עד כה המשימות נשמרו בזיכרון ונעלמו בהפעלה מחדש. היום ניתן לאפליקציה <b>זיכרון מתמיד</b> (<span class="en">DynamoDB</span>) ו<b>עיבוד מבוסס-אירועים</b> (<span class="en">SQS → Lambda → SNS</span>) — והכול נתרגל מקומית עם <span class="en">LocalStack</span>, בלי לשלם.</p>
+      <div class="pills">
+        <span class="pill">16:00–19:00</span>
+        <span class="pill"><span class="en">S3</span> · <span class="en">DynamoDB</span></span>
+        <span class="pill"><span class="en">SQS</span> · <span class="en">SNS</span></span>
+        <span class="pill"><span class="en">Event-driven</span></span>
+        <span class="pill"><span class="en">LocalStack</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · AGENDA -->
+  <section class="slide" data-topic="אג׳נדה">
+    <div class="s-wrap">
+      <span class="kicker">לוח הזמנים של היום</span>
+      <h2>מה נעשה ב-3 השעות</h2>
+      <div class="grid two">
+        <div class="card">
+          <table class="agenda">
+            <tr><th style="width:130px">זמן</th><th>פעילות</th></tr>
+            <tr><td class="t">16:00–16:15</td><td>חזרה ויעדי המפגש</td></tr>
+            <tr><td class="t">16:15–17:30</td><td>אחסון, מסדי נתונים, אירועים + <span class="en">LocalStack</span></td></tr>
+            <tr><td class="t">17:30–17:40</td><td>הפסקה</td></tr>
+            <tr><td class="t">17:40–18:30</td><td>חיבור <span class="en">DynamoDB</span> ו-<span class="en">SQS/SNS</span> לאפליקציה + הדגמה</td></tr>
+            <tr><td class="t">18:30–18:55</td><td>מעבדה עצמאית</td></tr>
+            <tr><td class="t">18:55–19:00</td><td>סיכום ומשימת בית</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">בסוף המפגש תדעו</h3>
+          <ul>
+            <li>להבחין בין <span class="en">S3</span>, <span class="en">RDS</span> ו-<span class="en">DynamoDB</span>.</li>
+            <li>להבין ארכיטקטורה מונחית-אירועים (<span class="en">SQS</span>, <span class="en">SNS</span>).</li>
+            <li>להשתמש ב-<span class="en">LocalStack</span> כדי לתרגל <span class="en">AWS</span> מקומית.</li>
+            <li>לשמור משימות ב-<span class="en">DynamoDB</span> מתוך האפליקציה.</li>
+            <li>לחבר <span class="en">POST → SQS → Lambda → SNS</span>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · WHERE WE ARE -->
+  <section class="slide" data-topic="איפה אנחנו בבנייה">
+    <div class="s-wrap">
+      <span class="kicker">מפת הבנייה של הפרויקט</span>
+      <h2>איפה אנחנו בבניית ה-<span class="en">Tasks API</span></h2>
+      <div class="buildmap">
+        <div class="bm done"><div class="dot">1</div><div class="lab2">Code</div></div>
+        <div class="bm done"><div class="dot">2</div><div class="lab2">CI</div></div>
+        <div class="bm done"><div class="dot">3</div><div class="lab2">Docker</div></div>
+        <div class="bm done"><div class="dot">4</div><div class="lab2">AWS</div></div>
+        <div class="bm now"><div class="dot">5</div><div class="lab2">Data</div></div>
+        <div class="bm"><div class="dot">6</div><div class="lab2">IaC</div></div>
+        <div class="bm"><div class="dot">7</div><div class="lab2">CD</div></div>
+        <div class="bm"><div class="dot">8</div><div class="lab2">Observe</div></div>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <div class="box simple"><div class="bt">היום — שלב 5: נתונים ואירועים</div><p style="margin:0">מחליפים את האחסון-בזיכרון ב-<span class="en">DynamoDB</span> (זוכרים את ההפשטה <code>TaskRepository</code> ממפגש 1?), ומוסיפים זרימת אירועים אסינכרונית — הכול מול <span class="en">LocalStack</span>.</p></div>
+        <div class="box note"><div class="bt">כבר מאחורינו · הבא</div><p style="margin:0"><b>מפגש 4:</b> הרצנו על <span class="en">EC2</span> והכרנו <span class="en">Lambda</span>. <b>מפגש 6:</b> נארוז <span class="en">multi-stage</span>, נדחוף ל-<span class="en">ECR</span>, ונקים את כל זה בענן עם <span class="en">Terraform</span>.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · DIVIDER 1 -->
+  <section class="slide divider" data-topic="חלק 1 · אחסון">
+    <div class="s-wrap">
+      <div class="pnum">חלק 1</div>
+      <h2>אחסון ומסדי נתונים</h2>
+      <p>איפה שומרים קבצים, ואיפה שומרים נתונים מובנים — והבחירה לפרויקט שלנו.</p>
+    </div>
+  </section>
+
+  <!-- 5 · S3 -->
+  <section class="slide" data-topic="חלק 1 · אחסון">
+    <div class="s-wrap">
+      <span class="kicker">אחסון אובייקטים</span>
+      <h2><span class="en">S3</span> — <span class="en">Simple Storage Service</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">"דיסק אינסופי" בענן לקבצים (אובייקטים): תמונות, גיבויים, קבצי לוג, ייצוא נתונים. מעלים לפי מפתח (שם), מקבלים <span class="en">URL</span>.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">אחסון אובייקטים עם עמידות גבוהה מאוד (<span class="en">11 nines</span>). מאורגן ב-<span class="en">buckets</span>; לא מערכת קבצים ולא מסד נתונים — מצוין לקבצים גדולים, לא לשאילתות.</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt">בפרויקט שלנו</div>נשתמש ב-<span class="en">S3</span> להדגמה (למשל ייצוא/קבצים). הנתונים המובנים של המשימות יישבו ב-<span class="en">DynamoDB</span>.</div>
+    </div>
+  </section>
+
+  <!-- 6 · RDS vs DYNAMODB -->
+  <section class="slide" data-topic="חלק 1 · אחסון">
+    <div class="s-wrap">
+      <span class="kicker">מסדי נתונים</span>
+      <h2><span class="en">RDS</span> מול <span class="en">DynamoDB</span></h2>
+      <table>
+        <tr><th></th><th><span class="en">RDS</span> (רלציוני)</th><th><span class="en">DynamoDB</span> (<span class="en">NoSQL</span>)</th></tr>
+        <tr><td>מודל</td><td>טבלאות, <span class="en">SQL</span>, קשרים</td><td>מפתח-ערך / מסמכים</td></tr>
+        <tr><td>סכמה</td><td>קשיחה מראש</td><td>גמישה</td></tr>
+        <tr><td>קנה מידה</td><td>אנכי בעיקר</td><td>אופקי, מנוהל מלא</td></tr>
+        <tr><td>מתאים ל…</td><td>קשרים מורכבים</td><td>גישה מהירה לפי מפתח</td></tr>
+      </table>
+      <div class="box note"><div class="bt">למה <span class="en">DynamoDB</span> לקורס</div><span class="en">serverless</span>, מנוהל מלא, <span class="en">on-demand</span> (משלמים לפי שימוש), ומשתלב מצוין עם <span class="en">LocalStack</span> — מושלם ל-<span class="en">Tasks API</span>.</div>
+    </div>
+  </section>
+
+  <!-- 7 · DYNAMODB MODELING -->
+  <section class="slide" data-topic="חלק 1 · אחסון">
+    <div class="s-wrap">
+      <span class="kicker">מידול בסיסי</span>
+      <h2>איך נראית טבלת <span class="en">DynamoDB</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">טבלה = אוסף <b>פריטים</b> (<span class="en">items</span>), לכל פריט <b>מפתח ראשי</b> (<span class="en">Partition Key</span>) ייחודי. אצלנו: טבלה <code>tasks</code> עם מפתח <code>id</code>.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">כל פריט הוא אוסף תכונות (<span class="en">attributes</span>) — אין סכמה אחידה. הגישה היעילה היא לפי המפתח. תכנון המפתח קובע ביצועים (נלמד עוד בהמשך הקריירה).</p></div>
+      </div>
+<pre><span class="o">tasks</span> table:
+{ <span class="o">"id"</span>: <span class="s">"a1b2"</span>, <span class="o">"title"</span>: <span class="s">"Learn Docker"</span>, <span class="o">"done"</span>: <span class="s">false</span> }
+{ <span class="o">"id"</span>: <span class="s">"c3d4"</span>, <span class="o">"title"</span>: <span class="s">"Deploy to AWS"</span>, <span class="o">"done"</span>: <span class="s">true</span>  }</pre>
+    </div>
+  </section>
+
+  <!-- 8 · NETWORKING BRIEF -->
+  <section class="slide" data-topic="חלק 1 · רשת">
+    <div class="s-wrap">
+      <span class="kicker">רקע קצר</span>
+      <h2>רשת ב-<span class="en">AWS</span> — מושגי יסוד</h2>
+      <table>
+        <tr><th>מושג</th><th>מה זה</th></tr>
+        <tr><td><span class="en">VPC</span></td><td>רשת וירטואלית פרטית — "השכונה" של המשאבים שלכם</td></tr>
+        <tr><td><span class="en">Subnet</span></td><td>תת-רשת בתוך ה-<span class="en">VPC</span> (<span class="en">public</span> / <span class="en">private</span>)</td></tr>
+        <tr><td><span class="en">Security Group</span></td><td>חומת אש ברמת המשאב (כבר ראינו במפגש 4)</td></tr>
+      </table>
+      <div class="box note"><div class="bt">למה רק בקצרה</div>שירותים מנוהלים כמו <span class="en">DynamoDB</span>, <span class="en">SQS</span> ו-<span class="en">SNS</span> נגישים דרך <span class="en">API</span> ולא דורשים רשת מורכבת. מספיק להכיר את המושגים — ב-<span class="en">Terraform</span> (מפגש 6) נשתמש ב-<span class="en">VPC</span> ברירת המחדל.</div>
+    </div>
+  </section>
+
+  <!-- 9 · DIVIDER 2 -->
+  <section class="slide divider" data-topic="חלק 2 · אירועים">
+    <div class="s-wrap">
+      <div class="pnum">חלק 2</div>
+      <h2>ארכיטקטורה מונחית-אירועים</h2>
+      <p>למה לא לעשות הכול "כאן ועכשיו" בתוך הבקשה — ואיך תורים והודעות מפרידים בין רכיבים.</p>
+    </div>
+  </section>
+
+  <!-- 10 · WHY DECOUPLE -->
+  <section class="slide" data-topic="חלק 2 · אירועים">
+    <div class="s-wrap">
+      <span class="kicker">הבעיה</span>
+      <h2>למה לפרק תלויות (<span class="en">decoupling</span>)?</h2>
+      <p class="lead">דמיינו ש-<code>POST /tasks</code> צריך גם לשלוח מייל, לעדכן דוח, ולקרוא לשירות חיצוני — הכול בתוך הבקשה.</p>
+      <ul>
+        <li>המשתמש מחכה לכל הפעולות — איטי.</li>
+        <li>אם שירות אחד נופל — כל הבקשה נכשלת.</li>
+        <li>קשה להוסיף "עוד מאזין" בלי לגעת בקוד ה-<span class="en">API</span>.</li>
+      </ul>
+      <div class="box simple"><div class="bt">הפתרון</div><p style="margin:0">ה-<span class="en">API</span> רק <b>מפרסם אירוע</b> ("נוצרה משימה") לתור, ועונה מיד. עיבוד נוסף קורה <b>אסינכרונית</b> ברקע — מהיר, עמיד, וקל להרחבה.</p></div>
+    </div>
+  </section>
+
+  <!-- 11 · SQS -->
+  <section class="slide" data-topic="חלק 2 · אירועים">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2><span class="en">SQS</span> — תור הודעות</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">"תיבת דואר" בין רכיבים: המפרסם שם הודעה בתור, והצרכן מושך אותה כשהוא פנוי. אם הצרכן עסוק או נפל — ההודעה ממתינה, לא הולכת לאיבוד.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">תור מנוהל, <span class="en">at-least-once delivery</span>. הודעה שנקראה "מוסתרת" (<span class="en">visibility timeout</span>) עד שתימחק; אם לא עובדה — חוזרת. הודעות בעייתיות עוברות ל-<span class="en">DLQ</span> (תור מתים).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 · SNS -->
+  <section class="slide" data-topic="חלק 2 · אירועים">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2><span class="en">SNS</span> — פרסום והרשמה</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">"רמקול": מפרסמים הודעה ל-<span class="en">topic</span>, וכל מי שנרשם (מייל, <span class="en">SMS</span>, תור אחר) מקבל אותה. אחד-לרבים (<span class="en">fan-out</span>).</p></div>
+        <div class="box tech"><div class="bt"><span class="en">SQS</span> מול <span class="en">SNS</span></div><p style="margin:0"><span class="en">SQS</span> = הודעה לצרכן <b>אחד</b> שמושך בקצב שלו. <span class="en">SNS</span> = שידור ל<b>כל</b> המנויים מיד (<span class="en">push</span>). לרוב משלבים: <span class="en">SNS</span> מפזר ל-<span class="en">SQS</span>.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 · EVENT FLOW -->
+  <section class="slide" data-topic="חלק 2 · אירועים">
+    <div class="s-wrap">
+      <span class="kicker">הארכיטקטורה שלנו</span>
+      <h2>הזרימה: <span class="en">API → SQS → Lambda → SNS</span></h2>
+      <div class="flow">
+        <span class="n">POST /tasks</span><span class="a">→</span>
+        <span class="n">SQS (תור)</span><span class="a">→</span>
+        <span class="n">Lambda (צרכן)</span><span class="a">→</span>
+        <span class="n">SNS (התראה)</span>
+      </div>
+      <p>ה-<span class="en">API</span> שומר את המשימה ומפרסם אירוע לתור; ה-<span class="en">Lambda</span> צורך מהתור ומפרסם התראה ב-<span class="en">SNS</span> — בדיוק הדיאגרמה מהסילבוס.</p>
+      <div class="box warn"><div class="bt"><span class="en">Idempotency</span> (חשוב!)</div><span class="en">SQS</span> עלול למסור הודעה יותר מפעם אחת. הצרכן חייב להיות <b>אידמפוטנטי</b> — לעבד את אותו <code>taskId</code> פעמיים בלי תופעות לוואי כפולות.</div>
+    </div>
+  </section>
+
+  <!-- 14 · DIVIDER 3 -->
+  <section class="slide divider" data-topic="חלק 3 · LocalStack">
+    <div class="s-wrap">
+      <div class="pnum">חלק 3</div>
+      <h2><span class="en">LocalStack</span></h2>
+      <p>להריץ את <span class="en">AWS</span> על המחשב — לפתח ולתרגל <span class="en">DynamoDB/SQS/SNS</span> בלי לגעת בענן ובלי לשלם.</p>
+    </div>
+  </section>
+
+  <!-- 15 · WHAT IS LOCALSTACK -->
+  <section class="slide" data-topic="חלק 3 · LocalStack">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>מה זה <span class="en">LocalStack</span>?</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">חיקוי של <span class="en">AWS</span> שרץ ב-<span class="en">container</span> על המחשב שלכם. מדברים אליו עם אותן פקודות <span class="en">AWS</span> בדיוק — רק שמפנים אותן אליו, לא לענן.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">מממש את ה-<span class="en">APIs</span> של עשרות שירותי <span class="en">AWS</span> מאחורי "שער" אחד על פורט <code>4566</code>. מפנים אליו עם <code>--endpoint-url</code> או דרך <code>awslocal</code>.</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt">למה זה מושלם לקורס</div>מתרגלים <span class="en">DynamoDB/SQS/SNS</span> ללא עלות וללא סיכון — בדיוק ה"מקומי" בשילוב "אמיתי" + "מקומי" של הקורס.</div>
+    </div>
+  </section>
+
+  <!-- 16 · LOCALSTACK SETUP -->
+  <section class="slide" data-topic="חלק 3 · LocalStack">
+    <div class="s-wrap">
+      <span class="kicker">קוד · compose</span>
+      <h2>מוסיפים את <span class="en">LocalStack</span> ל-<span class="en">compose</span></h2>
+      <span class="filename">docker/docker-compose.yml (תוספת)</span>
+<pre><span class="o">services</span>:
+  <span class="o">app</span>:
+    <span class="c"># ...כמו מפגש 3, אבל עכשיו:</span>
+    <span class="o">environment</span>:
+      - STORAGE=dynamodb
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - TASKS_TABLE=tasks
+      - TASK_EVENTS_QUEUE_URL=http://localstack:4566/000000000000/task-events
+    <span class="o">depends_on</span>: [ localstack ]
+  <span class="o">localstack</span>:
+    <span class="o">image</span>: localstack/localstack
+    <span class="o">ports</span>: [ <span class="s">"4566:4566"</span> ]
+    <span class="o">environment</span>: [ <span class="s">"SERVICES=dynamodb,sqs,sns,lambda,s3"</span> ]</pre>
+      <p class="muted">זוכרים את ההבטחה ממפגש 3? עכשיו ה-<span class="en">compose</span> מריץ שני שירותים יחד.</p>
+    </div>
+  </section>
+
+  <!-- 17 · DEMO localstack resources -->
+  <section class="slide" data-topic="הדגמה · משאבים מקומיים">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> יוצרים טבלה, תור ונושא ב-<span class="en">LocalStack</span></div>
+        <ol class="steps">
+          <li><b>מעלים</b> את <span class="en">LocalStack</span> (כחלק מה-<span class="en">compose</span> או לבד).</li>
+          <li><b>טבלת <span class="en">DynamoDB</span></b> (<code>awslocal</code> = <code>aws</code> מול <span class="en">LocalStack</span>):
+<pre><span class="k">awslocal</span> dynamodb create-table --table-name tasks \
+  --attribute-definitions AttributeName=id,AttributeType=S \
+  --key-schema AttributeName=id,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST</pre></li>
+          <li><b>תור <span class="en">SQS</span> ונושא <span class="en">SNS</span>:</b>
+<pre><span class="k">awslocal</span> sqs create-queue --queue-name task-events
+<span class="k">awslocal</span> sns create-topic --name task-notifications</pre></li>
+          <li><b>בודקים</b> שנוצרו: <code>awslocal dynamodb list-tables</code>.</li>
+        </ol>
+        <div class="box note"><div class="bt">ב-<span class="en">repo</span></div>סקריפט ב-<code>localstack/init/</code> יוצר את כל אלה אוטומטית בעליית ה-<span class="en">compose</span>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 18 · DIVIDER 4 -->
+  <section class="slide divider" data-topic="חלק 4 · מחברים לאפליקציה">
+    <div class="s-wrap">
+      <div class="pnum">חלק 4</div>
+      <h2>מחברים הכול לאפליקציה</h2>
+      <p>עכשיו הקוד: אחסון ב-<span class="en">DynamoDB</span>, פרסום ל-<span class="en">SQS</span>, וצרכן <span class="en">Lambda</span> שמתריע ב-<span class="en">SNS</span>.</p>
+    </div>
+  </section>
+
+  <!-- 19 · DYNAMODB REPO -->
+  <section class="slide" data-topic="חלק 4 · קוד">
+    <div class="s-wrap">
+      <span class="kicker">קוד · אחסון</span>
+      <h2>מימוש <code>DynamoDbTaskRepository</code></h2>
+      <p>זוכרים את הממשק <code>TaskRepository</code> ממפגש 1? עכשיו מוסיפים מימוש שני — בלי לגעת בלוגיקה:</p>
+      <span class="filename">DynamoDbTaskRepository.java</span>
+<pre>DynamoDbClient db = DynamoDbClient.builder()
+  .endpointOverride(URI.create(cfg.endpoint()))  <span class="c">// LocalStack או AWS אמיתי</span>
+  .region(Region.of(cfg.region()))
+  .build();
+
+<span class="c">// save:</span> db.putItem(r -&gt; r.tableName(<span class="s">"tasks"</span>).item(toItem(task)));
+<span class="c">// byId:</span> db.getItem(r -&gt; r.tableName(<span class="s">"tasks"</span>).key(keyOf(id)));</pre>
+      <div class="box note"><div class="bt">הקסם של ההפשטה</div>בוחרים מימוש לפי <code>STORAGE=dynamodb</code>. אותו <span class="en">endpointOverride</span> מצביע ל-<span class="en">LocalStack</span> בפיתוח ול-<span class="en">AWS</span> אמיתי בענן.</div>
+    </div>
+  </section>
+
+  <!-- 20 · SQS PUBLISHER -->
+  <section class="slide" data-topic="חלק 4 · קוד">
+    <div class="s-wrap">
+      <span class="kicker">קוד · פרסום אירוע</span>
+      <h2>פרסום ל-<span class="en">SQS</span> ב-<code>POST</code></h2>
+      <span class="filename">SqsEventPublisher.java</span>
+<pre><span class="c">// אחרי שמירת המשימה, מפרסמים אירוע — בלי לעכב את התשובה</span>
+String body = <span class="s">"{\"type\":\"TASK_CREATED\","</span>
+            + <span class="s">"\"taskId\":\""</span> + task.id() + <span class="s">"\"}"</span>;
+sqs.sendMessage(b -&gt; b.queueUrl(queueUrl).messageBody(body));</pre>
+      <div class="box tech"><div class="bt">חשוב</div><p style="margin:0">כשל בפרסום <b>לא</b> מפיל את הבקשה — רק מתעד אזהרה. המשתמש כבר קיבל <span class="en">201</span>; העיבוד הנוסף אסינכרוני.</p></div>
+    </div>
+  </section>
+
+  <!-- 21 · LAMBDA CONSUMER -->
+  <section class="slide" data-topic="חלק 4 · קוד">
+    <div class="s-wrap">
+      <span class="kicker">קוד · הצרכן</span>
+      <h2>ה-<span class="en">Lambda</span> שצורך מהתור</h2>
+      <span class="filename">lambda/.../Handler.java</span>
+<pre><span class="k">public class</span> Handler <span class="k">implements</span> RequestHandler&lt;SQSEvent, Void&gt; {
+  <span class="k">public</span> Void handleRequest(SQSEvent e, Context ctx) {
+    <span class="k">for</span> (var msg : e.getRecords()) {
+      <span class="c">// 1) לפענח את ההודעה (taskId)</span>
+      <span class="c">// 2) לעבד (אידמפוטנטי!)</span>
+      sns.publish(b -&gt; b.topicArn(topic)
+          .message(<span class="s">"Task created: "</span> + taskId));   <span class="c">// 3) להתריע</span>
+    }
+    <span class="k">return null</span>;
+  }
+}</pre>
+      <p class="muted">חיבור התור ל-<span class="en">Lambda</span> (<span class="en">event source mapping</span>) יוגדר ב-<span class="en">Terraform</span> במפגש 6; ב-<span class="en">LocalStack</span> נחבר אותו לתרגול.</p>
+    </div>
+  </section>
+
+  <!-- 22 · DEMO full flow -->
+  <section class="slide" data-topic="הדגמה · בניית שלב 5">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> הזרימה המלאה מקצה לקצה</div>
+        <ol class="steps">
+          <li><b>גרסת הייחוס:</b> <code>git checkout v5-data-events</code>, ואז מעלים הכול:
+<pre><span class="k">docker compose</span> -f docker/docker-compose.yml up --build</pre></li>
+          <li><b>יוצרים משימה</b> (ה-<span class="en">API</span> שומר ב-<span class="en">DynamoDB</span> ומפרסם ל-<span class="en">SQS</span>):
+<pre><span class="k">curl</span> -X POST localhost:8080/tasks \
+  -H <span class="s">"Content-Type: application/json"</span> -d <span class="s">'{"title":"Ship it"}'</span></pre></li>
+          <li><b>מאמתים שנשמר</b> ב-<span class="en">DynamoDB</span>:
+<pre><span class="k">awslocal</span> dynamodb scan --table-name tasks   <span class="c"># המשימה שם</span></pre></li>
+          <li><b>צופים</b> שה-<span class="en">Lambda</span> צרך את ההודעה ופרסם ל-<span class="en">SNS</span> (בלוגים).</li>
+        </ol>
+        <div class="box note"><div class="bt">הישג</div>בניתם ארכיטקטורה מונחית-אירועים מלאה — שרצה כולה על המחשב, בחינם.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 23 · LAB -->
+  <section class="slide" data-topic="מעבדה">
+    <div class="s-wrap">
+      <div class="block lab">
+        <div class="hd"><span class="badge">מעבדה</span> בנו את שלב 5 — 25 דקות</div>
+        <ol class="steps">
+          <li><b>העלו <span class="en">LocalStack</span></b> וצרו טבלה, תור ונושא (<code>awslocal</code>).</li>
+          <li><b>הריצו</b> את האפליקציה עם <code>STORAGE=dynamodb</code> ו-<code>AWS_ENDPOINT_URL</code> ל-<span class="en">LocalStack</span>.</li>
+          <li><b>צרו משימה</b> ב-<code>POST</code>, ואמתו ב-<code>awslocal dynamodb scan</code> שהיא נשמרה.</li>
+          <li><b>בדקו</b> שהאירוע הגיע לתור ושה-<span class="en">Lambda</span> עיבד אותו (לוגים).</li>
+          <li><b>אתגר:</b> צרו את אותה משימה פעמיים — ודאו שה-<span class="en">Lambda</span> מתנהג אידמפוטנטית.</li>
+        </ol>
+        <div class="box note" style="margin-top:6px"><div class="bt">סימן הצלחה</div>המשימות שורדות הפעלה מחדש (נשמרות ב-<span class="en">DynamoDB</span>), והאירועים זורמים <span class="en">API → SQS → Lambda → SNS</span>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 24 · HW -->
+  <section class="slide" data-topic="משימת בית">
+    <div class="s-wrap">
+      <div class="block hw">
+        <div class="hd"><span class="badge">משימת בית</span> לפני מפגש 6</div>
+        <ol class="steps">
+          <li><b>קריאה:</b> ארכיטקטורה מונחית-אירועים ו-<span class="en">idempotency</span> — למה מסירה כפולה אפשרית ואיך מתמודדים.</li>
+          <li><b>תרגול:</b> הוסיפו שדה <code>done</code> והרחיבו את ה-<span class="en">repository</span> לעדכון משימה (<span class="en">PUT</span>), עם בדיקה.</li>
+          <li><b>חשבו:</b> אילו משאבי <span class="en">AWS</span> יצרנו ידנית עד כה? (טבלה, תור, נושא, שרת...) — במפגש 6 נקים את כולם <b>כקוד</b>.</li>
+        </ol>
+        <div class="box note" style="margin-top:6px"><div class="bt">טיזר למפגש 6</div>נפסיק "ללחוץ בקונסולה" ונעבור ל-<span class="en">Terraform</span> — כל התשתית כקוד, בפקודה אחת.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 25 · RECAP + NEXT -->
+  <section class="slide" data-topic="סיכום">
+    <div class="s-wrap">
+      <span class="kicker">סיכום מפגש 5</span>
+      <h2>מה בנינו, ולאן ממשיכים</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3 style="margin-top:0">שלב 5 הושלם — נתונים ואירועים</h3>
+          <ul>
+            <li>הכרנו <span class="en">S3</span>, <span class="en">RDS</span>/<span class="en">DynamoDB</span> ו-<span class="en">SQS</span>/<span class="en">SNS</span>.</li>
+            <li>חיברנו אחסון מתמיד וזרימת אירועים לאפליקציה.</li>
+            <li>תרגלנו הכול מקומית עם <span class="en">LocalStack</span>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">הבא — מפגש 6: <span class="en">IaC</span> + <span class="en">ECR</span></h3>
+          <ul>
+            <li><span class="en">multi-stage build</span> ודחיפה ל-<span class="en">Amazon ECR</span>.</li>
+            <li><span class="en">Terraform</span> מקים את כל המשאבים בענן — כקוד.</li>
+          </ul>
+          <div class="box warn" style="margin-top:6px"><div class="bt">לא לשכוח</div>הזרימה המלאה עובדת מקומית, וה-<span class="en">repo</span> מעודכן.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 26 · END -->
+  <section class="slide cover" data-topic="סוף">
+    <div class="s-wrap">
+      <div class="eyebrow">מפגש 5 הושלם · שלב <span class="en">Deploy</span> · 2</div>
+      <h1>שאלות?<br><span class="accent">נתראה במפגש 6 — תשתית כקוד</span></h1>
+      <p class="sub">תזכורת: הזרימה <span class="en">API → SQS → Lambda → SNS</span> עובדת מקומית עם <span class="en">LocalStack</span>, וה-<span class="en">DynamoDB</span> שומר משימות.</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button id="prev" onclick="go(-1)">→ הקודם</button>
+  <div style="text-align:center"><div class="count" id="count">1 / 1</div><div class="hint">מקשים: ← הבא · → הקודם</div></div>
+  <button id="next" class="primary" onclick="go(1)">הבא ←</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const stage = document.getElementById('stage');
+  let i = 0;
+  function clamp(n){ return Math.max(0, Math.min(slides.length-1, n)); }
+  function fit(){
+    const wrap = slides[i] && slides[i].querySelector('.s-wrap');
+    if(!wrap) return;
+    wrap.style.transform='none';
+    const pad=22;
+    const availH = stage.clientHeight - pad*2;
+    const availW = stage.clientWidth - pad*2;
+    const h = wrap.offsetHeight, w = wrap.offsetWidth;
+    if(!h || !w) return;
+    const scale = Math.min(1, availH/h, availW/w);
+    wrap.style.transform = scale<0.999 ? 'scale('+scale.toFixed(4)+')' : 'none';
+  }
+  function render(){
+    slides.forEach((s,k)=> s.classList.toggle('active', k===i));
+    document.getElementById('count').textContent = (i+1)+' / '+slides.length;
+    document.getElementById('pbar').style.width = ((i+1)/slides.length*100)+'%';
+    document.getElementById('topic').textContent = 'מפגש 5 — ' + (slides[i].dataset.topic||'');
+    document.getElementById('prev').disabled = (i===0);
+    document.getElementById('next').disabled = (i===slides.length-1);
+    requestAnimationFrame(fit);
+    history.replaceState(null,'', '#'+(i+1));
+  }
+  function go(d){ i = clamp(i+d); render(); }
+  function jump(n){ i = clamp(n); render(); }
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowLeft' || e.key===' ' || e.key==='PageDown'){ e.preventDefault(); go(1); }
+    else if(e.key==='ArrowRight' || e.key==='PageUp'){ e.preventDefault(); go(-1); }
+    else if(e.key==='Home'){ jump(0); }
+    else if(e.key==='End'){ jump(slides.length-1); }
+  });
+  function toggleFs(){ if(!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); } else { document.exitFullscreen && document.exitFullscreen(); } }
+  window.addEventListener('resize', ()=>requestAnimationFrame(fit));
+  document.addEventListener('fullscreenchange', ()=>requestAnimationFrame(fit));
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>requestAnimationFrame(fit)); }
+  const start = parseInt((location.hash||'').replace('#',''),10);
+  if(!isNaN(start)) i = clamp(start-1);
+  render();
+</script>
+</body>
+</html>

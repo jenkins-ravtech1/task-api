@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מפגש 8 · Observability + Capstone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0f2e4d; --blue:#1F4E79; --blue2:#2E5496; --accent:#ff9900;
+    --bg:#0f1722; --stage:#eef2f7; --card:#ffffff; --ink:#1a2330; --muted:#5b6776; --line:#dfe6ee;
+    --simple:#0ea5b7; --tech:#6366f1; --demo:#16a34a; --lab:#ff9900; --hw:#7c3aed;
+    --code-bg:#0b2233; --code-ink:#e6f0fa;
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  html{direction:rtl}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); overflow:hidden;
+    font-family:"Heebo","Segoe UI","Arial",sans-serif; direction:rtl; text-align:right;
+  }
+  code,.en,kbd{direction:ltr; unicode-bidi:isolate;}
+  code{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace; font-size:.85em;
+       background:#eef3f9; color:#16324f; padding:.06em .42em; border-radius:6px; border:1px solid #dbe6f1;}
+  kbd{font-family:"JetBrains Mono",monospace; font-size:.8em; background:#1f2937; color:#e5e7eb;
+      border:1px solid #374151; border-bottom-width:2px; border-radius:6px; padding:1px 7px}
+
+  /* chrome */
+  .topbar{position:fixed; top:0; inset-inline:0; height:50px; z-index:30;
+    background:linear-gradient(90deg,var(--navy),var(--blue2)); color:#fff;
+    display:flex; align-items:center; gap:14px; padding:0 18px; box-shadow:0 2px 10px rgba(0,0,0,.25)}
+  .topbar .brand{font-weight:800; font-size:15px}
+  .topbar .sep{opacity:.5}
+  .topbar .topic{font-size:14px; opacity:.92; font-weight:500}
+  .topbar .spacer{flex:1}
+  .topbar button{background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.25);
+    border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer; font-family:inherit}
+  .topbar button:hover{background:rgba(255,255,255,.26)}
+  .pbar{position:fixed; top:50px; inset-inline:0; height:4px; background:#cdd7e2; z-index:30}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),#ffc46b); transition:width .25s}
+
+  .stage{position:fixed; top:54px; bottom:58px; inset-inline:0; overflow:hidden; background:var(--stage)}
+  .navbar{position:fixed; bottom:0; inset-inline:0; height:58px; z-index:30; background:#fff;
+    border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 18px}
+  .navbar .count{font-weight:700; color:var(--muted); font-size:14px; direction:ltr; unicode-bidi:isolate}
+  .navbar .hint{font-size:12.5px; color:#9aa6b2}
+  .navbar button{font-family:inherit; cursor:pointer; border-radius:10px; padding:9px 18px; font-size:15px; font-weight:700;
+    border:1px solid var(--line); background:#fff; color:var(--navy)}
+  .navbar button.primary{background:var(--navy); color:#fff; border-color:var(--navy)}
+  .navbar button:disabled{opacity:.4; cursor:default}
+
+  /* slides */
+  .slide{display:none; position:absolute; inset:0; padding:18px 22px}
+  .slide.active{display:flex; align-items:center; justify-content:center; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+  .s-wrap{max-width:1000px; width:100%; margin:0 auto; transform-origin:center center}
+  .kicker{display:inline-block; font-size:13px; font-weight:700; color:var(--accent);
+    text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px}
+  .slide h2{font-size:30px; font-weight:800; color:var(--navy); margin:0 0 14px; line-height:1.2}
+  .slide h3{font-size:20px; font-weight:800; color:var(--blue2); margin:18px 0 8px}
+  .slide p{font-size:17.5px; line-height:1.6; margin:0 0 12px}
+  .slide ul,.slide ol{font-size:17px; line-height:1.6; margin:8px 0; padding-inline-start:24px}
+  .slide li{margin:7px 0}
+  .lead{font-size:19px; color:#33414f}
+  .muted{color:var(--muted)}
+
+  /* cover + divider */
+  .cover{background:radial-gradient(1200px 500px at 80% -10%,#1c476f 0,transparent 60%),linear-gradient(135deg,var(--navy),var(--blue) 70%); color:#fff}
+  .cover .eyebrow{font-size:15px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; font-weight:700}
+  .cover h1{font-size:46px; line-height:1.12; margin:10px 0 8px; font-weight:900}
+  .cover h1 .accent{color:var(--accent)}
+  .cover .sub{font-size:20px; opacity:.95; max-width:760px}
+  .cover .pills{margin-top:22px; display:flex; flex-wrap:wrap; gap:10px}
+  .cover .pill{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:8px 16px; font-size:14.5px}
+  .divider{background:linear-gradient(135deg,#13243a,#22507e); color:#fff}
+  .divider .pnum{font-size:18px; font-weight:700; color:var(--accent); letter-spacing:.1em}
+  .divider h2{color:#fff; font-size:40px; margin:6px 0 10px}
+  .divider p{font-size:19px; opacity:.92; max-width:720px}
+
+  /* cards / boxes */
+  .grid{display:grid; gap:16px}
+  .two{grid-template-columns:1fr 1fr}
+  .three{grid-template-columns:repeat(3,1fr)}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:0 4px 16px rgba(15,46,77,.06)}
+  .box{border-radius:14px; padding:16px 18px; border:1px solid var(--line)}
+  .box .bt{font-weight:800; font-size:14px; margin-bottom:8px; display:flex; align-items:center; gap:8px}
+  .box .bt::before{content:""; width:10px; height:10px; border-radius:50%}
+  .box.simple{background:#e7f8fb; border-color:#bde9f0}
+  .box.simple .bt{color:#0b7c8c} .box.simple .bt::before{background:var(--simple)}
+  .box.tech{background:#eef0fe; border-color:#d3d8fb}
+  .box.tech .bt{color:#4348c7} .box.tech .bt::before{background:var(--tech)}
+  .box.note{background:#f0f7ff; border-color:#cfe3fb}
+  .box.note .bt{color:var(--blue2)} .box.note .bt::before{background:var(--blue2)}
+  .box.warn{background:#fff4ed; border-color:#ffd9bf}
+  .box.warn .bt{color:#c2410c} .box.warn .bt::before{background:#ea580c}
+
+  /* demo / lab / hw */
+  .block{border-radius:var(--radius); padding:18px 20px; border:1px solid var(--line); background:#fff}
+  .block > .hd{display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; margin-bottom:6px}
+  .block .badge{font-size:12px; font-weight:800; color:#fff; padding:3px 10px; border-radius:999px}
+  .block.demo{border-inline-start:6px solid var(--demo); background:#f1faf3}
+  .block.demo .badge{background:var(--demo)} .block.demo .hd{color:#15803d}
+  .block.lab{border-inline-start:6px solid var(--lab); background:#fff8ee}
+  .block.lab .badge{background:var(--lab)} .block.lab .hd{color:#b45309}
+  .block.hw{border-inline-start:6px solid var(--hw); background:#f6f1fe}
+  .block.hw .badge{background:var(--hw)} .block.hw .hd{color:#6b21a8}
+  .steps{counter-reset:st; list-style:none; padding:0; margin:8px 0 0}
+  .steps > li{position:relative; padding:4px 40px 14px 0; margin:0}
+  .steps > li::before{counter-increment:st; content:counter(st); position:absolute; inset-inline-start:0; top:0;
+    width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff; font-weight:800; font-size:14px;
+    display:flex; align-items:center; justify-content:center}
+  .block.demo .steps>li::before{background:var(--demo)} .block.lab .steps>li::before{background:var(--lab)}
+  .block.hw .steps>li::before{background:var(--hw)}
+  .steps > li:not(:last-child){border-inline-start:2px dashed #d7dee7; margin-inline-start:13px}
+  .steps b{color:var(--navy)}
+
+  /* code */
+  pre{direction:ltr; text-align:left; background:var(--code-bg); color:var(--code-ink); border-radius:12px;
+    padding:14px 16px; overflow-x:auto; font-family:"JetBrains Mono",monospace; font-size:14px; line-height:1.55; margin:10px 0;
+    border:1px solid #143049}
+  pre .c{color:#7fa7c7}
+  pre .k{color:#ffb86c}
+  pre .s{color:#a5e6a5}
+  pre .o{color:#9fd0ff}
+  .filename{direction:ltr; text-align:left; font-family:"JetBrains Mono",monospace; font-size:12px; color:#9fb6cb;
+    background:#0b2233; border:1px solid #143049; border-bottom:0; border-radius:10px 10px 0 0; padding:6px 12px; margin:10px 0 -10px; display:inline-block}
+
+  /* tables */
+  table{width:100%; border-collapse:collapse; direction:rtl; background:#fff; border-radius:12px; overflow:hidden; margin:10px 0; font-size:16px}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:right; vertical-align:top}
+  th{background:var(--blue); color:#fff; font-weight:700}
+  tr:nth-child(even) td{background:#f4f8fc}
+  .agenda td.t{white-space:nowrap; font-weight:700; color:var(--blue2); direction:ltr; unicode-bidi:isolate; text-align:right; width:130px}
+
+  /* flow */
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; direction:ltr; justify-content:center; margin:14px 0}
+  .flow .n{background:#fff; border:2px solid var(--blue2); color:var(--navy); border-radius:10px; padding:8px 14px; font-weight:700; font-size:15px}
+  .flow .a{color:var(--accent); font-weight:800; font-size:20px}
+
+  /* build map */
+  .buildmap{position:relative; display:flex; justify-content:space-between; direction:rtl; margin:18px 6px 8px}
+  .buildmap::before{content:""; position:absolute; top:21px; inset-inline:24px; height:3px; background:#cdd7e2}
+  .bm{position:relative; width:12%; text-align:center}
+  .bm .dot{width:44px; height:44px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:16px; border:3px solid #cdd7e2; background:#fff; color:#9aa6b2}
+  .bm .lab2{font-size:12px; margin-top:7px; color:#9aa6b2; font-weight:700; line-height:1.2}
+  .bm.done .dot{background:#16a34a; border-color:#16a34a; color:#fff}
+  .bm.done .lab2{color:#15803d}
+  .bm.now .dot{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 0 5px rgba(255,153,0,.22)}
+  .bm.now .lab2{color:var(--navy)}
+
+  @media (max-width:760px){ .two,.three{grid-template-columns:1fr} .cover h1{font-size:34px} .slide h2{font-size:24px} }
+  @media print{
+    body{overflow:visible}
+    .topbar,.navbar,.pbar{display:none}
+    .stage{position:static; overflow:visible; top:0; bottom:0}
+    .slide{position:static !important; display:block !important; min-height:auto; page-break-after:always; padding:0 0 24px; border-bottom:2px solid #ccc}
+    .s-wrap{transform:none !important}
+    .cover,.divider{color:#000; background:#fff !important}
+    .cover h1,.divider h2{color:var(--navy)}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">מקוד לענן</span><span class="sep">·</span>
+  <span class="topic" id="topic">מפגש 8 — Observability</span>
+  <span class="spacer"></span>
+  <button onclick="toggleFs()">מסך מלא</button>
+</div>
+<div class="pbar"><i id="pbar"></i></div>
+
+<div class="stage" id="stage">
+
+  <!-- 1 · COVER -->
+  <section class="slide cover" data-topic="פתיחה">
+    <div class="s-wrap">
+      <div class="eyebrow">מפגש 8 מתוך 8 · שלב <span class="en">Observe</span> · סיום</div>
+      <h1>Observability + Capstone<br><span class="accent">לראות מה קורה בפנים</span></h1>
+      <p class="sub">השירות רץ בענן ומתעדכן לבד — אבל איך נדע שהוא בריא, מהיר, ולמה נפל? היום נוסיף את העין: <span class="en">Logs</span>, <span class="en">Metrics</span> ו-<span class="en">Traces</span> — ונסגור את המעגל ב-<span class="en">Capstone</span> מקצה לקצה.</p>
+      <div class="pills">
+        <span class="pill">16:00–19:00</span>
+        <span class="pill"><span class="en">Logs</span></span>
+        <span class="pill"><span class="en">Metrics</span> + <span class="en">Alarms</span></span>
+        <span class="pill"><span class="en">Traces</span> (<span class="en">X-Ray</span>)</span>
+        <span class="pill"><span class="en">Capstone</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · AGENDA -->
+  <section class="slide" data-topic="אג׳נדה">
+    <div class="s-wrap">
+      <span class="kicker">לוח הזמנים של היום</span>
+      <h2>מה נעשה ב-3 השעות</h2>
+      <div class="grid two">
+        <div class="card">
+          <table class="agenda">
+            <tr><th style="width:130px">זמן</th><th>פעילות</th></tr>
+            <tr><td class="t">16:00–16:15</td><td>חזרה ויעדי המפגש</td></tr>
+            <tr><td class="t">16:15–17:30</td><td>שלושת העמודים: <span class="en">Logs</span>, <span class="en">Metrics</span>, <span class="en">Traces</span></td></tr>
+            <tr><td class="t">17:30–17:40</td><td>הפסקה</td></tr>
+            <tr><td class="t">17:40–18:30</td><td>הדגמות + <span class="en">Capstone</span> מקצה לקצה</td></tr>
+            <tr><td class="t">18:30–18:55</td><td>מעבדה + הצגות</td></tr>
+            <tr><td class="t">18:55–19:00</td><td>סיכום הקורס</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">בסוף המפגש תדעו</h3>
+          <ul>
+            <li>להבחין בין <span class="en">monitoring</span> ל-<span class="en">observability</span>.</li>
+            <li>לשלוח <span class="en">logs</span> ל-<span class="en">CloudWatch</span> ולתשאל ב-<span class="en">Logs Insights</span>.</li>
+            <li>ליצור <span class="en">metric</span>, <span class="en">dashboard</span> ו-<span class="en">alarm</span>.</li>
+            <li>להוסיף <span class="en">tracing</span> מבוזר עם <span class="en">OpenTelemetry → X-Ray</span>.</li>
+            <li>להדגים את המערכת המלאה — מקוד ועד ניטור.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · WHERE WE ARE -->
+  <section class="slide" data-topic="איפה אנחנו בבנייה">
+    <div class="s-wrap">
+      <span class="kicker">מפת הבנייה של הפרויקט</span>
+      <h2>השלב האחרון בבניית ה-<span class="en">Tasks API</span></h2>
+      <div class="buildmap">
+        <div class="bm done"><div class="dot">1</div><div class="lab2">Code</div></div>
+        <div class="bm done"><div class="dot">2</div><div class="lab2">CI</div></div>
+        <div class="bm done"><div class="dot">3</div><div class="lab2">Docker</div></div>
+        <div class="bm done"><div class="dot">4</div><div class="lab2">AWS</div></div>
+        <div class="bm done"><div class="dot">5</div><div class="lab2">Data</div></div>
+        <div class="bm done"><div class="dot">6</div><div class="lab2">IaC</div></div>
+        <div class="bm done"><div class="dot">7</div><div class="lab2">CD</div></div>
+        <div class="bm now"><div class="dot">8</div><div class="lab2">Observe</div></div>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <div class="box simple"><div class="bt">היום — שלב 8: <span class="en">Observe</span></div><p style="margin:0">מוסיפים ניטור לשירות הפרוס: לוגים, מטריקות והתחקות — וסוגרים את מחזור החיים <span class="en">Code → Observe</span> בפרויקט שלם.</p></div>
+        <div class="box note"><div class="bt">מאחורינו</div><p style="margin:0">כתבנו (1), בדקנו (2), ארזנו (3), פרסנו לענן (4–6), ואיטמנו פריסה אוטומטית (7). נשאר רק לראות מה קורה בפנים.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · DIVIDER 1 -->
+  <section class="slide divider" data-topic="חלק 1 · למה ניטור">
+    <div class="s-wrap">
+      <div class="pnum">חלק 1</div>
+      <h2>למה <span class="en">Observability</span>?</h2>
+      <p>שירות בענן הוא "קופסה שחורה" — בלי ניטור, נגלה תקלות מהמשתמשים. נפתח את הקופסה.</p>
+    </div>
+  </section>
+
+  <!-- 5 · MONITORING VS OBS -->
+  <section class="slide" data-topic="חלק 1 · למה ניטור">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2><span class="en">Monitoring</span> מול <span class="en">Observability</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><b><span class="en">Monitoring</span></b> = לעקוב אחרי דברים <b>שאנחנו יודעים</b> לבדוק מראש ("האם השרת חי?"). <b><span class="en">Observability</span></b> = יכולת לחקור ולהבין <b>גם תקלות שלא צפינו</b>, מתוך הנתונים שהמערכת פולטת.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">Observability</span> נשענת על שלושה סוגי טלמטריה ("שלושת העמודים"): <span class="en">Logs</span> (מה קרה), <span class="en">Metrics</span> (כמה), ו-<span class="en">Traces</span> (איפה בזרימה). יחד הם מאפשרים לשאול שאלות חדשות בלי לשנות קוד.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · THREE PILLARS -->
+  <section class="slide" data-topic="חלק 1 · למה ניטור">
+    <div class="s-wrap">
+      <span class="kicker">המסגרת</span>
+      <h2>שלושת העמודים</h2>
+      <div class="grid three">
+        <div class="card"><h3 style="margin-top:0"><span class="en">Logs</span></h3><p style="margin:0">רישום אירועים בזמן — "מה קרה ומתי". טקסט/<span class="en">JSON</span> לכל בקשה או שגיאה.</p></div>
+        <div class="card"><h3 style="margin-top:0"><span class="en">Metrics</span></h3><p style="margin:0">מספרים לאורך זמן — "כמה": בקשות לשנייה, אחוז שגיאות, <span class="en">latency</span>.</p></div>
+        <div class="card"><h3 style="margin-top:0"><span class="en">Traces</span></h3><p style="margin:0">מסע של בקשה בודדת בין רכיבים — "איפה" הזמן/התקלה בזרימה.</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt">ב-<span class="en">AWS</span></div><span class="en">CloudWatch</span> מרכז <span class="en">Logs</span> ו-<span class="en">Metrics</span>; <span class="en">X-Ray</span> מציג <span class="en">Traces</span>. כולם מוזנים מהשירות שלנו.</div>
+    </div>
+  </section>
+
+  <!-- 7 · DIVIDER 2 -->
+  <section class="slide divider" data-topic="חלק 2 · Logs">
+    <div class="s-wrap">
+      <div class="pnum">חלק 2</div>
+      <h2>עמוד 1: <span class="en">Logs</span></h2>
+      <p>הדרך הפשוטה והחשובה ביותר לדעת מה קרה — אם כותבים אותם נכון.</p>
+    </div>
+  </section>
+
+  <!-- 8 · STRUCTURED LOGGING -->
+  <section class="slide" data-topic="חלק 2 · Logs">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>לוגים מובנים (<span class="en">Structured Logging</span>)</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">במקום שורות טקסט חופשי, כותבים כל לוג כ-<span class="en">JSON</span> עם שדות. אז אפשר לסנן ולחפש לפי שדה — "כל הבקשות עם <span class="en">status</span> 500".</p></div>
+        <div class="box tech"><div class="bt">בפרויקט שלנו</div><p style="margin:0">כל בקשה כותבת שורה אחת:</p>
+<pre>{<span class="o">"ts"</span>:<span class="s">"..."</span>,<span class="o">"requestId"</span>:<span class="s">"a1b2"</span>,
+ <span class="o">"method"</span>:<span class="s">"POST"</span>,<span class="o">"path"</span>:<span class="s">"/tasks"</span>,
+ <span class="o">"status"</span>:201,<span class="o">"durationMs"</span>:12}</pre></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · CLOUDWATCH LOGS -->
+  <section class="slide" data-topic="חלק 2 · Logs">
+    <div class="s-wrap">
+      <span class="kicker">איסוף ותשאול</span>
+      <h2><span class="en">CloudWatch Logs</span> ו-<span class="en">Logs Insights</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">השירות שולח את הלוגים ל-<span class="en">CloudWatch</span>, ושם אפשר לחפש בהם — גם של ה-<span class="en">EC2</span> וגם של ה-<span class="en">Lambda</span>, במקום אחד.</p></div>
+        <div class="box tech"><div class="bt"><span class="en">Logs Insights</span></div><p style="margin:0">שפת שאילתות על הלוגים:</p>
+<pre><span class="k">fields</span> @timestamp, status, durationMs
+| <span class="k">filter</span> status &gt;= 500
+| <span class="k">sort</span> @timestamp <span class="k">desc</span></pre></div>
+      </div>
+      <div class="box note"><div class="bt">איך הלוגים מגיעים</div>הקונטיינר על <span class="en">EC2</span> שולח <span class="en">stdout</span> ל-<span class="en">CloudWatch</span> (דרך <span class="en">log driver</span>); <span class="en">Lambda</span> שולח אוטומטית. הכול הוגדר ב-<span class="en">Terraform</span> (מפגש 6).</div>
+    </div>
+  </section>
+
+  <!-- 10 · DEMO logs -->
+  <section class="slide" data-topic="הדגמה · Logs">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> שולחים ומתשאלים לוגים</div>
+        <ol class="steps">
+          <li><b>מייצרים תעבורה</b> — כמה בקשות ל-<span class="en">API</span> הפרוס (כולל אחת שגויה).</li>
+          <li><b>פותחים</b> <span class="en">CloudWatch → Log groups</span> ובוחרים את ה-<span class="en">log group</span> של השירות.</li>
+          <li><b>מריצים שאילתה</b> ב-<span class="en">Logs Insights</span> שמסננת <span class="en">status &gt;= 500</span>.</li>
+          <li><b>מאתרים</b> את הבקשה הבעייתית לפי <code>requestId</code> ורואים את כל ההקשר.</li>
+        </ol>
+        <div class="box note"><div class="bt">הערך</div>מ"משהו נשבר" ל"הבקשה הזו, בזמן הזה, עם השגיאה הזו" — תוך שניות.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · DIVIDER 3 -->
+  <section class="slide divider" data-topic="חלק 3 · Metrics">
+    <div class="s-wrap">
+      <div class="pnum">חלק 3</div>
+      <h2>עמוד 2: <span class="en">Metrics</span> ו-<span class="en">Alarms</span></h2>
+      <p>מספרים לאורך זמן — ומישהו ש"יצעק" כשמשהו חורג.</p>
+    </div>
+  </section>
+
+  <!-- 12 · METRICS -->
+  <section class="slide" data-topic="חלק 3 · Metrics">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2><span class="en">Metrics</span> — מדידה לאורך זמן</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">ערכים מספריים שנמדדים שוב ושוב: כמה בקשות, כמה שגיאות, כמה זמן לקחה תגובה. מציגים אותם בגרפים (<span class="en">dashboard</span>).</p></div>
+        <div class="box tech"><div class="bt"><span class="en">RED</span> / <span class="en">USE</span></div><p style="margin:0">מסגרות נפוצות: <b><span class="en">RED</span></b> — <span class="en">Rate</span>, <span class="en">Errors</span>, <span class="en">Duration</span> (לשירותים). <b><span class="en">USE</span></b> — <span class="en">Utilization</span>, <span class="en">Saturation</span>, <span class="en">Errors</span> (למשאבים).</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt">בפרויקט שלנו</div>האפליקציה פולטת <span class="en">metric</span> מותאם (<code>TasksCreated</code>) ו-<span class="en">latency</span> — דרך <span class="en">EMF</span> (הלוגים המובנים הופכים גם למטריקות).</div>
+    </div>
+  </section>
+
+  <!-- 13 · ALARMS -->
+  <section class="slide" data-topic="חלק 3 · Metrics">
+    <div class="s-wrap">
+      <span class="kicker">תגובה אוטומטית</span>
+      <h2><span class="en">Dashboards</span> ו-<span class="en">Alarms</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><span class="en">Dashboard</span> = מסך גרפים לתמונת מצב. <span class="en">Alarm</span> = חוק על <span class="en">metric</span> ("אם יש שגיאות 5xx ל-5 דקות") ששולח התראה.</p></div>
+        <div class="box tech"><div class="bt">בפרויקט שלנו</div><p style="margin:0"><span class="en">CloudWatch Alarm</span> על <span class="en">5xx</span> או על שגיאות <span class="en">Lambda</span> → פעולה: פרסום ל-<span class="en">SNS</span> (אותו נושא מהארכיטקטורה) → מייל. הוגדר ב-<span class="en">Terraform</span>.</p></div>
+      </div>
+      <div class="flow">
+        <span class="n">Metric</span><span class="a">→</span>
+        <span class="n">Alarm (חורג מסף)</span><span class="a">→</span>
+        <span class="n">SNS</span><span class="a">→</span>
+        <span class="n">מייל לצוות</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 14 · DEMO metric+alarm -->
+  <section class="slide" data-topic="הדגמה · Alarm">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> <span class="en">metric</span>, <span class="en">dashboard</span> ו-<span class="en">alarm</span></div>
+        <ol class="steps">
+          <li><b>צופים ב-<span class="en">metric</span></b> <code>TasksCreated</code> ו-<span class="en">latency</span> ב-<span class="en">CloudWatch → Metrics</span>.</li>
+          <li><b>מוסיפים ל-<span class="en">dashboard</span></b> גרף של בקשות ושגיאות.</li>
+          <li><b>יוצרים <span class="en">alarm</span></b>: <span class="en">5xx &gt; 0</span> ל-5 דקות → פעולה: <span class="en">SNS</span>.</li>
+          <li><b>מפעילים שגיאה</b> בכוונה (בקשה לא תקינה חוזרת) — וצופים ב-<span class="en">alarm</span> עובר ל-<span class="en">ALARM</span> ובמייל שמגיע.</li>
+        </ol>
+        <div class="box note"><div class="bt">סגירת מעגל</div>אותו <span class="en">SNS</span> שבנינו במפגש 5 לאירועי משימות — משמש עכשיו גם להתראות תקלה.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15 · DIVIDER 4 -->
+  <section class="slide divider" data-topic="חלק 4 · Traces">
+    <div class="s-wrap">
+      <div class="pnum">חלק 4</div>
+      <h2>עמוד 3: <span class="en">Traces</span></h2>
+      <p>לעקוב אחרי בקשה בודדת לאורך כל הרכיבים — <span class="en">API → SQS → Lambda</span>.</p>
+    </div>
+  </section>
+
+  <!-- 16 · DISTRIBUTED TRACING -->
+  <section class="slide" data-topic="חלק 4 · Traces">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2><span class="en">Distributed Tracing</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">כשבקשה עוברת בין כמה שירותים, <span class="en">trace</span> מחבר את כל התחנות לסיפור אחד — ומראה איפה הזמן הלך או איפה נשבר.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">trace</span> מורכב מ-<span class="en">spans</span> (מקטעי עבודה) עם מזהה משותף (<span class="en">trace id</span>) שעובר בין הרכיבים. כך רואים <span class="en">API → SQS → Lambda</span> כשרשרת אחת.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17 · OTEL X-RAY -->
+  <section class="slide" data-topic="חלק 4 · Traces">
+    <div class="s-wrap">
+      <span class="kicker">הגישה העדכנית</span>
+      <h2><span class="en">OpenTelemetry</span> → <span class="en">X-Ray</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">מחברים "סוכן" (<span class="en">agent</span>) לאפליקציה <b>בלי לשנות קוד</b>, והוא אוסף <span class="en">traces</span> ושולח אותם ל-<span class="en">X-Ray</span> לצפייה.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">ADOT</span> (חבילת <span class="en">OpenTelemetry</span> של <span class="en">AWS</span>) — סוכן <span class="en">Java</span> שמתחבר עם <code>-javaagent</code> ומבצע <span class="en">auto-instrumentation</span> ל-<span class="en">HTTP</span> ולקריאות <span class="en">AWS SDK</span>.</p></div>
+      </div>
+<pre><span class="c"># מחברים את הסוכן — אפס שינויי קוד</span>
+<span class="k">java</span> -javaagent:/otel/aws-opentelemetry-agent.jar -jar app.jar
+OTEL_TRACES_EXPORTER=otlp        <span class="c"># שולח ל-X-Ray</span></pre>
+      <div class="box warn"><div class="bt">עדכני, לא מיושן</div><span class="en">AWS</span> ממליצה היום על <span class="en">OpenTelemetry</span>, וה-<span class="en">X-Ray SDK</span> הישן בדרך ליציאה משימוש. בונוס: אותו סוכן מפעיל גם <span class="en">CloudWatch Application Signals</span> (<span class="en">APM</span>) בהגדרה אחת.</div>
+    </div>
+  </section>
+
+  <!-- 18 · DEMO trace -->
+  <section class="slide" data-topic="הדגמה · Trace">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> <span class="en">trace</span> מקצה לקצה ב-<span class="en">X-Ray</span></div>
+        <ol class="steps">
+          <li><b>מוודאים</b> שהסוכן מחובר לשירות ול-<span class="en">Lambda</span> (דרך ה-<span class="en">image</span>/<span class="en">Terraform</span>).</li>
+          <li><b>יוצרים משימה</b> (<code>POST /tasks</code>) כדי להפעיל את כל השרשרת.</li>
+          <li><b>פותחים <span class="en">X-Ray</span></b> ובוחרים את ה-<span class="en">trace</span> האחרון.</li>
+          <li><b>רואים את ה-<span class="en">service map</span></b> ואת ה-<span class="en">spans</span>: <span class="en">API → SQS → Lambda</span> — עם הזמן שכל מקטע לקח.</li>
+        </ol>
+        <div class="box note"><div class="bt">הדיאגרמה קמה לחיים</div>זו בדיוק הארכיטקטורה מהסילבוס — עכשיו נראית כ-<span class="en">trace</span> אמיתי.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 19 · DIVIDER 5 -->
+  <section class="slide divider" data-topic="חלק 5 · Capstone">
+    <div class="s-wrap">
+      <div class="pnum">חלק 5</div>
+      <h2><span class="en">Capstone</span>: הכול ביחד</h2>
+      <p>סוגרים את המעגל — מ-<span class="en">push</span> ועד <span class="en">trace</span>, על המערכת שבניתם.</p>
+    </div>
+  </section>
+
+  <!-- 20 · FULL SYSTEM -->
+  <section class="slide" data-topic="חלק 5 · Capstone">
+    <div class="s-wrap">
+      <span class="kicker">מה בניתם</span>
+      <h2>המערכת המלאה</h2>
+      <div class="flow">
+        <span class="n">Code</span><span class="a">→</span>
+        <span class="n">CI</span><span class="a">→</span>
+        <span class="n">Docker/ECR</span><span class="a">→</span>
+        <span class="n">Terraform</span><span class="a">→</span>
+        <span class="n">CD</span><span class="a">→</span>
+        <span class="n">EC2 + DynamoDB + SQS/Lambda/SNS</span><span class="a">→</span>
+        <span class="n">CloudWatch + X-Ray</span>
+      </div>
+      <p>שירות <span class="en">Java</span> נקי שרץ בענן, נארז ב-<span class="en">Docker</span>, מתפרס אוטומטית עם <span class="en">CI/CD</span> ו-<span class="en">IaC</span>, שומר נתונים, מעבד אירועים, ומנוטר במלואו — נבנה צעד-אחר-צעד לאורך 8 מפגשים.</p>
+      <div class="box note"><div class="bt">זו כל מפת הבנייה</div>כל 8 השלבים — מלאים. אותו פרויקט אחד, מההתחלה ועד הסוף.</div>
+    </div>
+  </section>
+
+  <!-- 21 · CAPSTONE DEMO -->
+  <section class="slide" data-topic="הדגמה · Capstone">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">Capstone</span> ריצה מלאה מקצה לקצה</div>
+        <ol class="steps">
+          <li><b>דוחפים שינוי</b> ל-<span class="en">main</span> → ה-<span class="en">CD</span> בונה, דוחף ל-<span class="en">ECR</span>, מריץ <span class="en">terraform apply</span> ומפרס (עם אישור).</li>
+          <li><b>מייצרים תעבורה</b> אל ה-<span class="en">API</span> הפרוס — יוצרים כמה משימות.</li>
+          <li><b><span class="en">Logs</span>:</b> מתשאלים את הבקשות ב-<span class="en">Logs Insights</span>.</li>
+          <li><b><span class="en">Metrics</span>:</b> רואים את הגרפים ב-<span class="en">dashboard</span>; מפעילים שגיאה → <span class="en">alarm</span> + מייל.</li>
+          <li><b><span class="en">Traces</span>:</b> פותחים ב-<span class="en">X-Ray</span> את השרשרת <span class="en">API → SQS → Lambda</span>.</li>
+        </ol>
+        <div class="box note"><div class="bt">זהו — סגרתם את המעגל</div>מ-<span class="en">commit</span> ועד <span class="en">trace</span>, אוטומטית ומנוטר. זה <span class="en">DevOps</span>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 22 · LAB -->
+  <section class="slide" data-topic="מעבדה + הצגות">
+    <div class="s-wrap">
+      <div class="block lab">
+        <div class="hd"><span class="badge">מעבדה + הצגות</span> השלימו את שלב 8</div>
+        <ol class="steps">
+          <li><b>ודאו לוגים</b> מובנים זורמים ל-<span class="en">CloudWatch</span>, ותשאלו ב-<span class="en">Logs Insights</span>.</li>
+          <li><b>צרו <span class="en">dashboard</span></b> + <span class="en">alarm</span> על <span class="en">5xx</span> → <span class="en">SNS</span>; הפעילו שגיאה ובדקו שההתראה מגיעה.</li>
+          <li><b>אמתו <span class="en">trace</span></b> מלא ב-<span class="en">X-Ray</span> (<span class="en">API → SQS → Lambda</span>).</li>
+          <li><b>הציגו</b> לכיתה את המערכת שלכם: <span class="en">push</span> → פריסה → לוגים → מטריקה → trace.</li>
+        </ol>
+        <div class="box note" style="margin-top:6px"><div class="bt">סימן הצלחה</div>אתם מסוגלים לענות על "האם השירות בריא?", "מה נשבר?", ו"איפה הזמן הלך?" — מהנתונים בלבד.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 23 · CLEANUP -->
+  <section class="slide" data-topic="ניקוי עלויות">
+    <div class="s-wrap">
+      <div class="block hw">
+        <div class="hd"><span class="badge">חובה</span> צ׳קליסט ניקוי עלויות</div>
+        <ol class="steps">
+          <li><b><code>terraform destroy</code></b> — מוחק את כל מה שהוקם (<span class="en">EC2, DynamoDB, SQS, SNS, Lambda, ECR</span>...).</li>
+          <li><b>בדקו בקונסולה</b> שלא נשארו משאבים דולקים (במיוחד <span class="en">EC2</span>).</li>
+          <li><b>בדקו את ה-<span class="en">Budget</span></b> וההתראות מהמפגש על <span class="en">AWS</span>.</li>
+          <li><b>מחקו</b> משאבים ידניים אם נותרו (<span class="en">S3 buckets</span>, <span class="en">log groups</span>).</li>
+        </ol>
+        <div class="box warn" style="margin-top:6px"><div class="bt">הכלל החשוב ביותר בענן</div>מה שמדליקים — מכבים. <code>destroy</code> בסוף, תמיד.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 24 · NEXT STEPS -->
+  <section class="slide" data-topic="לאן ממשיכים">
+    <div class="s-wrap">
+      <span class="kicker">המסע ממשיך</span>
+      <h2>לאן ממשיכים מכאן</h2>
+      <div class="grid three">
+        <div class="card"><h3 style="margin-top:0"><span class="en">IaC</span> מתקדם</h3><p style="margin:0"><span class="en">Terraform</span> <span class="en">modules</span> ו-<span class="en">remote state</span>; חלופות (<span class="en">CDK</span>).</p></div>
+        <div class="card"><h3 style="margin-top:0"><span class="en">Kubernetes</span></h3><p style="margin:0">תזמור קונטיינרים בקנה מידה עם <span class="en">Amazon EKS</span>.</p></div>
+        <div class="card"><h3 style="margin-top:0">עוד <span class="en">AWS</span></h3><p style="margin:0"><span class="en">Load Balancers</span>, <span class="en">Auto Scaling</span>, <span class="en">ECS Fargate</span>, <span class="en">RDS</span>.</p></div>
+        <div class="card"><h3 style="margin-top:0"><span class="en">DevSecOps</span></h3><p style="margin:0">סריקות אבטחה ב-<span class="en">CI</span>, ניהול סודות, <span class="en">least privilege</span>.</p></div>
+        <div class="card"><h3 style="margin-top:0"><span class="en">Application Signals</span></h3><p style="margin:0"><span class="en">APM</span> מלא מעל <span class="en">OpenTelemetry</span>.</p></div>
+        <div class="card"><h3 style="margin-top:0">אמינות</h3><p style="margin:0"><span class="en">SLOs</span>, <span class="en">on-call</span>, <span class="en">postmortems</span> — תרבות <span class="en">SRE</span>.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 25 · COURSE RECAP -->
+  <section class="slide" data-topic="סיכום הקורס">
+    <div class="s-wrap">
+      <span class="kicker">סיכום הקורס</span>
+      <h2>מקוד לענן — המסע המלא</h2>
+      <div class="buildmap">
+        <div class="bm done"><div class="dot">1</div><div class="lab2">Code</div></div>
+        <div class="bm done"><div class="dot">2</div><div class="lab2">CI</div></div>
+        <div class="bm done"><div class="dot">3</div><div class="lab2">Docker</div></div>
+        <div class="bm done"><div class="dot">4</div><div class="lab2">AWS</div></div>
+        <div class="bm done"><div class="dot">5</div><div class="lab2">Data</div></div>
+        <div class="bm done"><div class="dot">6</div><div class="lab2">IaC</div></div>
+        <div class="bm done"><div class="dot">7</div><div class="lab2">CD</div></div>
+        <div class="bm done"><div class="dot">8</div><div class="lab2">Observe</div></div>
+      </div>
+      <p style="margin-top:14px">התחלתם עם <span class="en">Java</span> בלבד. עכשיו אתם יודעים לקחת אפליקציה — לבדוק, לארוז, לפרוס לענן, לאוטמט ולנטר אותה. זה בדיוק מה שצוות <span class="en">DevOps</span> עושה כל יום.</p>
+      <div class="box simple"><div class="bt">הדבר הכי חשוב</div>למדתם <b>מנטליות</b>, לא רק כלים: אוטומציה, חזרתיות, בקרת עלויות, ולראות מה קורה בפנים. הכלים ישתנו — הגישה תישאר.</div>
+    </div>
+  </section>
+
+  <!-- 26 · END -->
+  <section class="slide cover" data-topic="סוף">
+    <div class="s-wrap">
+      <div class="eyebrow">הקורס הושלם · מקוד לענן</div>
+      <h1>כל הכבוד!<br><span class="accent">בניתם מערכת ענן מלאה מקצה לקצה</span></h1>
+      <p class="sub">8 מפגשים, פרויקט אחד, מ-<span class="en">Code</span> ועד <span class="en">Observe</span>. תודה — ובהצלחה בהמשך הדרך.</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button id="prev" onclick="go(-1)">→ הקודם</button>
+  <div style="text-align:center"><div class="count" id="count">1 / 1</div><div class="hint">מקשים: ← הבא · → הקודם</div></div>
+  <button id="next" class="primary" onclick="go(1)">הבא ←</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const stage = document.getElementById('stage');
+  let i = 0;
+  function clamp(n){ return Math.max(0, Math.min(slides.length-1, n)); }
+  function fit(){
+    const wrap = slides[i] && slides[i].querySelector('.s-wrap');
+    if(!wrap) return;
+    wrap.style.transform='none';
+    const pad=22;
+    const availH = stage.clientHeight - pad*2;
+    const availW = stage.clientWidth - pad*2;
+    const h = wrap.offsetHeight, w = wrap.offsetWidth;
+    if(!h || !w) return;
+    const scale = Math.min(1, availH/h, availW/w);
+    wrap.style.transform = scale<0.999 ? 'scale('+scale.toFixed(4)+')' : 'none';
+  }
+  function render(){
+    slides.forEach((s,k)=> s.classList.toggle('active', k===i));
+    document.getElementById('count').textContent = (i+1)+' / '+slides.length;
+    document.getElementById('pbar').style.width = ((i+1)/slides.length*100)+'%';
+    document.getElementById('topic').textContent = 'מפגש 8 — ' + (slides[i].dataset.topic||'');
+    document.getElementById('prev').disabled = (i===0);
+    document.getElementById('next').disabled = (i===slides.length-1);
+    requestAnimationFrame(fit);
+    history.replaceState(null,'', '#'+(i+1));
+  }
+  function go(d){ i = clamp(i+d); render(); }
+  function jump(n){ i = clamp(n); render(); }
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowLeft' || e.key===' ' || e.key==='PageDown'){ e.preventDefault(); go(1); }
+    else if(e.key==='ArrowRight' || e.key==='PageUp'){ e.preventDefault(); go(-1); }
+    else if(e.key==='Home'){ jump(0); }
+    else if(e.key==='End'){ jump(slides.length-1); }
+  });
+  function toggleFs(){ if(!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); } else { document.exitFullscreen && document.exitFullscreen(); } }
+  window.addEventListener('resize', ()=>requestAnimationFrame(fit));
+  document.addEventListener('fullscreenchange', ()=>requestAnimationFrame(fit));
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>requestAnimationFrame(fit)); }
+  const start = parseInt((location.hash||'').replace('#',''),10);
+  if(!isNaN(start)) i = clamp(start-1);
+  render();
+</script>
+</body>
+</html>

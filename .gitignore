@@ -19,13 +19,16 @@ yarn-error.log*
 target/
 *.class
 
-# Terraform — never commit state or real variable files (they hold secrets/IDs)
+# Terraform — never commit state, real variable files, or saved plans
+# (they hold secrets/IDs)
 .terraform/
 *.tfstate
 *.tfstate.*
 crash.log
 *.tfvars
 !*.tfvars.example
+tfplan
+*.tfplan
 
 # Keys / secrets
 *.pem

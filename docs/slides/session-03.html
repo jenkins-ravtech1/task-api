@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מפגש 3 · Docker — Package</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0f2e4d; --blue:#1F4E79; --blue2:#2E5496; --accent:#ff9900;
+    --bg:#0f1722; --stage:#eef2f7; --card:#ffffff; --ink:#1a2330; --muted:#5b6776; --line:#dfe6ee;
+    --simple:#0ea5b7; --tech:#6366f1; --demo:#16a34a; --lab:#ff9900; --hw:#7c3aed;
+    --code-bg:#0b2233; --code-ink:#e6f0fa;
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  html{direction:rtl}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); overflow:hidden;
+    font-family:"Heebo","Segoe UI","Arial",sans-serif; direction:rtl; text-align:right;
+  }
+  code,.en,kbd{direction:ltr; unicode-bidi:isolate;}
+  code{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace; font-size:.85em;
+       background:#eef3f9; color:#16324f; padding:.06em .42em; border-radius:6px; border:1px solid #dbe6f1;}
+  kbd{font-family:"JetBrains Mono",monospace; font-size:.8em; background:#1f2937; color:#e5e7eb;
+      border:1px solid #374151; border-bottom-width:2px; border-radius:6px; padding:1px 7px}
+
+  /* chrome */
+  .topbar{position:fixed; top:0; inset-inline:0; height:50px; z-index:30;
+    background:linear-gradient(90deg,var(--navy),var(--blue2)); color:#fff;
+    display:flex; align-items:center; gap:14px; padding:0 18px; box-shadow:0 2px 10px rgba(0,0,0,.25)}
+  .topbar .brand{font-weight:800; font-size:15px}
+  .topbar .sep{opacity:.5}
+  .topbar .topic{font-size:14px; opacity:.92; font-weight:500}
+  .topbar .spacer{flex:1}
+  .topbar button{background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.25);
+    border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer; font-family:inherit}
+  .topbar button:hover{background:rgba(255,255,255,.26)}
+  .pbar{position:fixed; top:50px; inset-inline:0; height:4px; background:#cdd7e2; z-index:30}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),#ffc46b); transition:width .25s}
+
+  .stage{position:fixed; top:54px; bottom:58px; inset-inline:0; overflow:hidden; background:var(--stage)}
+  .navbar{position:fixed; bottom:0; inset-inline:0; height:58px; z-index:30; background:#fff;
+    border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 18px}
+  .navbar .count{font-weight:700; color:var(--muted); font-size:14px; direction:ltr; unicode-bidi:isolate}
+  .navbar .hint{font-size:12.5px; color:#9aa6b2}
+  .navbar button{font-family:inherit; cursor:pointer; border-radius:10px; padding:9px 18px; font-size:15px; font-weight:700;
+    border:1px solid var(--line); background:#fff; color:var(--navy)}
+  .navbar button.primary{background:var(--navy); color:#fff; border-color:var(--navy)}
+  .navbar button:disabled{opacity:.4; cursor:default}
+
+  /* slides */
+  .slide{display:none; position:absolute; inset:0; padding:18px 22px}
+  .slide.active{display:flex; align-items:center; justify-content:center; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+  .s-wrap{max-width:1000px; width:100%; margin:0 auto; transform-origin:center center}
+  .kicker{display:inline-block; font-size:13px; font-weight:700; color:var(--accent);
+    text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px}
+  .slide h2{font-size:30px; font-weight:800; color:var(--navy); margin:0 0 14px; line-height:1.2}
+  .slide h3{font-size:20px; font-weight:800; color:var(--blue2); margin:18px 0 8px}
+  .slide p{font-size:17.5px; line-height:1.6; margin:0 0 12px}
+  .slide ul,.slide ol{font-size:17px; line-height:1.6; margin:8px 0; padding-inline-start:24px}
+  .slide li{margin:7px 0}
+  .lead{font-size:19px; color:#33414f}
+  .muted{color:var(--muted)}
+
+  /* cover + divider */
+  .cover{background:radial-gradient(1200px 500px at 80% -10%,#1c476f 0,transparent 60%),linear-gradient(135deg,var(--navy),var(--blue) 70%); color:#fff}
+  .cover .eyebrow{font-size:15px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; font-weight:700}
+  .cover h1{font-size:46px; line-height:1.12; margin:10px 0 8px; font-weight:900}
+  .cover h1 .accent{color:var(--accent)}
+  .cover .sub{font-size:20px; opacity:.95; max-width:760px}
+  .cover .pills{margin-top:22px; display:flex; flex-wrap:wrap; gap:10px}
+  .cover .pill{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:8px 16px; font-size:14.5px}
+  .divider{background:linear-gradient(135deg,#13243a,#22507e); color:#fff}
+  .divider .pnum{font-size:18px; font-weight:700; color:var(--accent); letter-spacing:.1em}
+  .divider h2{color:#fff; font-size:40px; margin:6px 0 10px}
+  .divider p{font-size:19px; opacity:.92; max-width:720px}
+
+  /* cards / boxes */
+  .grid{display:grid; gap:16px}
+  .two{grid-template-columns:1fr 1fr}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:0 4px 16px rgba(15,46,77,.06)}
+  .box{border-radius:14px; padding:16px 18px; border:1px solid var(--line)}
+  .box .bt{font-weight:800; font-size:14px; margin-bottom:8px; display:flex; align-items:center; gap:8px}
+  .box .bt::before{content:""; width:10px; height:10px; border-radius:50%}
+  .box.simple{background:#e7f8fb; border-color:#bde9f0}
+  .box.simple .bt{color:#0b7c8c} .box.simple .bt::before{background:var(--simple)}
+  .box.tech{background:#eef0fe; border-color:#d3d8fb}
+  .box.tech .bt{color:#4348c7} .box.tech .bt::before{background:var(--tech)}
+  .box.note{background:#f0f7ff; border-color:#cfe3fb}
+  .box.note .bt{color:var(--blue2)} .box.note .bt::before{background:var(--blue2)}
+  .box.warn{background:#fff4ed; border-color:#ffd9bf}
+  .box.warn .bt{color:#c2410c} .box.warn .bt::before{background:#ea580c}
+
+  /* demo / lab / hw */
+  .block{border-radius:var(--radius); padding:18px 20px; border:1px solid var(--line); background:#fff}
+  .block > .hd{display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; margin-bottom:6px}
+  .block .badge{font-size:12px; font-weight:800; color:#fff; padding:3px 10px; border-radius:999px}
+  .block.demo{border-inline-start:6px solid var(--demo); background:#f1faf3}
+  .block.demo .badge{background:var(--demo)} .block.demo .hd{color:#15803d}
+  .block.lab{border-inline-start:6px solid var(--lab); background:#fff8ee}
+  .block.lab .badge{background:var(--lab)} .block.lab .hd{color:#b45309}
+  .block.hw{border-inline-start:6px solid var(--hw); background:#f6f1fe}
+  .block.hw .badge{background:var(--hw)} .block.hw .hd{color:#6b21a8}
+  .steps{counter-reset:st; list-style:none; padding:0; margin:8px 0 0}
+  .steps > li{position:relative; padding:4px 40px 14px 0; margin:0}
+  .steps > li::before{counter-increment:st; content:counter(st); position:absolute; inset-inline-start:0; top:0;
+    width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff; font-weight:800; font-size:14px;
+    display:flex; align-items:center; justify-content:center}
+  .block.demo .steps>li::before{background:var(--demo)} .block.lab .steps>li::before{background:var(--lab)}
+  .block.hw .steps>li::before{background:var(--hw)}
+  .steps > li:not(:last-child){border-inline-start:2px dashed #d7dee7; margin-inline-start:13px}
+  .steps b{color:var(--navy)}
+
+  /* code */
+  pre{direction:ltr; text-align:left; background:var(--code-bg); color:var(--code-ink); border-radius:12px;
+    padding:14px 16px; overflow-x:auto; font-family:"JetBrains Mono",monospace; font-size:14px; line-height:1.55; margin:10px 0;
+    border:1px solid #143049}
+  pre .c{color:#7fa7c7}
+  pre .k{color:#ffb86c}
+  pre .s{color:#a5e6a5}
+  pre .o{color:#9fd0ff}
+  .filename{direction:ltr; text-align:left; font-family:"JetBrains Mono",monospace; font-size:12px; color:#9fb6cb;
+    background:#0b2233; border:1px solid #143049; border-bottom:0; border-radius:10px 10px 0 0; padding:6px 12px; margin:10px 0 -10px; display:inline-block}
+
+  /* tables */
+  table{width:100%; border-collapse:collapse; direction:rtl; background:#fff; border-radius:12px; overflow:hidden; margin:10px 0; font-size:16px}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:right; vertical-align:top}
+  th{background:var(--blue); color:#fff; font-weight:700}
+  tr:nth-child(even) td{background:#f4f8fc}
+  .agenda td.t{white-space:nowrap; font-weight:700; color:var(--blue2); direction:ltr; unicode-bidi:isolate; text-align:right; width:130px}
+
+  /* flow */
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; direction:ltr; justify-content:center; margin:14px 0}
+  .flow .n{background:#fff; border:2px solid var(--blue2); color:var(--navy); border-radius:10px; padding:8px 14px; font-weight:700; font-size:15px}
+  .flow .a{color:var(--accent); font-weight:800; font-size:20px}
+
+  /* build map */
+  .buildmap{position:relative; display:flex; justify-content:space-between; direction:rtl; margin:18px 6px 8px}
+  .buildmap::before{content:""; position:absolute; top:21px; inset-inline:24px; height:3px; background:#cdd7e2}
+  .bm{position:relative; width:12%; text-align:center}
+  .bm .dot{width:44px; height:44px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:16px; border:3px solid #cdd7e2; background:#fff; color:#9aa6b2}
+  .bm .lab2{font-size:12px; margin-top:7px; color:#9aa6b2; font-weight:700; line-height:1.2}
+  .bm.done .dot{background:#16a34a; border-color:#16a34a; color:#fff}
+  .bm.done .lab2{color:#15803d}
+  .bm.now .dot{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 0 5px rgba(255,153,0,.22)}
+  .bm.now .lab2{color:var(--navy)}
+
+  @media (max-width:760px){ .two{grid-template-columns:1fr} .cover h1{font-size:34px} .slide h2{font-size:24px} }
+  @media print{
+    body{overflow:visible}
+    .topbar,.navbar,.pbar{display:none}
+    .stage{position:static; overflow:visible; top:0; bottom:0}
+    .slide{position:static !important; display:block !important; min-height:auto; page-break-after:always; padding:0 0 24px; border-bottom:2px solid #ccc}
+    .s-wrap{transform:none !important}
+    .cover,.divider{color:#000; background:#fff !important}
+    .cover h1,.divider h2{color:var(--navy)}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">מקוד לענן</span><span class="sep">·</span>
+  <span class="topic" id="topic">מפגש 3 — Docker</span>
+  <span class="spacer"></span>
+  <button onclick="toggleFs()">מסך מלא</button>
+</div>
+<div class="pbar"><i id="pbar"></i></div>
+
+<div class="stage" id="stage">
+
+  <!-- 1 · COVER -->
+  <section class="slide cover" data-topic="פתיחה">
+    <div class="s-wrap">
+      <div class="eyebrow">מפגש 3 מתוך 8 · שלב <span class="en">Package</span></div>
+      <h1>קונטיינריזציה<br><span class="accent">אורזים את האפליקציה עם Docker</span></h1>
+      <p class="sub">הקוד נבנה ונבדק אוטומטית (מפגש 2). היום נארוז אותו ל-<span class="en">container</span> אחד שרץ <b>זהה בכל מקום</b> — על המחשב שלכם, אצל חבר לצוות, ובהמשך בענן.</p>
+      <div class="pills">
+        <span class="pill">16:00–19:00</span>
+        <span class="pill"><span class="en">Containers</span> vs <span class="en">VMs</span></span>
+        <span class="pill"><span class="en">Dockerfile</span></span>
+        <span class="pill"><span class="en">docker compose</span></span>
+        <span class="pill"><span class="en">Docker Hub</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · AGENDA -->
+  <section class="slide" data-topic="אג׳נדה">
+    <div class="s-wrap">
+      <span class="kicker">לוח הזמנים של היום</span>
+      <h2>מה נעשה ב-3 השעות</h2>
+      <div class="grid two">
+        <div class="card">
+          <table class="agenda">
+            <tr><th style="width:130px">זמן</th><th>פעילות</th></tr>
+            <tr><td class="t">16:00–16:15</td><td>חזרה ויעדי המפגש</td></tr>
+            <tr><td class="t">16:15–17:30</td><td>קונטיינרים, <span class="en">images</span>, <span class="en">Dockerfile</span> + הדגמה</td></tr>
+            <tr><td class="t">17:30–17:40</td><td>הפסקה</td></tr>
+            <tr><td class="t">17:40–18:30</td><td><span class="en">docker compose</span>, <span class="en">registry</span> + <span class="en">CI</span></td></tr>
+            <tr><td class="t">18:30–18:55</td><td>מעבדה עצמאית</td></tr>
+            <tr><td class="t">18:55–19:00</td><td>סיכום ומשימת בית</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">בסוף המפגש תדעו</h3>
+          <ul>
+            <li>להסביר מה ההבדל בין <span class="en">container</span> ל-<span class="en">VM</span>.</li>
+            <li>להבין <span class="en">images</span>, שכבות (<span class="en">layers</span>) ו-<span class="en">cache</span>.</li>
+            <li>לכתוב <span class="en">Dockerfile</span> ולהריץ <span class="en">container</span>.</li>
+            <li>להריץ את האפליקציה עם <span class="en">docker compose</span>.</li>
+            <li>לדחוף <span class="en">image</span> ל-<span class="en">Docker Hub</span> ולבנות אותו ב-<span class="en">CI</span>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · WHERE WE ARE -->
+  <section class="slide" data-topic="איפה אנחנו בבנייה">
+    <div class="s-wrap">
+      <span class="kicker">מפת הבנייה של הפרויקט</span>
+      <h2>איפה אנחנו בבניית ה-<span class="en">Tasks API</span></h2>
+      <div class="buildmap">
+        <div class="bm done"><div class="dot">1</div><div class="lab2">Code</div></div>
+        <div class="bm done"><div class="dot">2</div><div class="lab2">CI</div></div>
+        <div class="bm now"><div class="dot">3</div><div class="lab2">Docker</div></div>
+        <div class="bm"><div class="dot">4</div><div class="lab2">AWS</div></div>
+        <div class="bm"><div class="dot">5</div><div class="lab2">Data</div></div>
+        <div class="bm"><div class="dot">6</div><div class="lab2">IaC</div></div>
+        <div class="bm"><div class="dot">7</div><div class="lab2">CD</div></div>
+        <div class="bm"><div class="dot">8</div><div class="lab2">Observe</div></div>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <div class="box simple"><div class="bt">היום — שלב 3: <span class="en">Package</span></div><p style="margin:0">אורזים את ה-<span class="en">Tasks API</span> ל-<span class="en">Docker image</span>: יחידה אחת שכוללת את הקוד, ה-<span class="en">JDK/JRE</span> וההגדרות — ורצה זהה בכל מקום.</p></div>
+        <div class="box note"><div class="bt">כבר מאחורינו · הבא</div><p style="margin:0"><b>מפגשים 1–2:</b> כתבנו, בדקנו, ויש <span class="en">CI</span> ירוק. <b>מפגש 4:</b> ניקח את ה-<span class="en">image</span> הזה ונריץ אותו על שרת אמיתי בענן (<span class="en">AWS EC2</span>).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · DIVIDER 1 -->
+  <section class="slide divider" data-topic="חלק 1 · למה קונטיינרים">
+    <div class="s-wrap">
+      <div class="pnum">חלק 1</div>
+      <h2>למה קונטיינרים?</h2>
+      <p>הבעיה ש-<span class="en">Docker</span> פותר — ומה ההבדל בינו לבין מכונה וירטואלית.</p>
+    </div>
+  </section>
+
+  <!-- 5 · CONTAINER VS VM -->
+  <section class="slide" data-topic="חלק 1 · למה קונטיינרים">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2><span class="en">Container</span> מול <span class="en">VM</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><b><span class="en">VM</span></b> = מחשב שלם מדומה, עם מערכת הפעלה משלו — כבד ואיטי לעלייה. <b><span class="en">Container</span></b> = אריזה של האפליקציה בלבד + מה שהיא צריכה, שחולקת את ה-<span class="en">OS</span> של המארח — קטן ועולה בשניות.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">VM</span> רץ מעל <span class="en">hypervisor</span> עם <span class="en">guest OS</span> מלא. <span class="en">container</span> הוא תהליך מבודד (<span class="en">namespaces</span> + <span class="en">cgroups</span>) שחולק את ה-<span class="en">kernel</span> של המארח — לכן הוא קל, מהיר וצפוף יותר.</p></div>
+      </div>
+      <table>
+        <tr><th></th><th><span class="en">VM</span></th><th><span class="en">Container</span></th></tr>
+        <tr><td>גודל</td><td>גיגה-בייטים</td><td>מגה-בייטים</td></tr>
+        <tr><td>זמן עלייה</td><td>דקות</td><td>שניות</td></tr>
+        <tr><td>בידוד</td><td>מלא (OS נפרד)</td><td>ברמת התהליך</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 6 · WHY IT SOLVES -->
+  <section class="slide" data-topic="חלק 1 · למה קונטיינרים">
+    <div class="s-wrap">
+      <span class="kicker">הערך</span>
+      <h2>הקונטיינר פותר את "אצלי זה עובד"</h2>
+      <p class="lead">ה-<span class="en">image</span> כולל את <b>הכול</b>: הקוד, ה-<span class="en">runtime</span> (<span class="en">JRE</span>), התלויות וההגדרות.</p>
+      <ul>
+        <li>אם זה רץ ב-<span class="en">container</span> אצלי — זה ירוץ אותו דבר אצל כל אחד ובכל שרת.</li>
+        <li>אין יותר "התקנת <span class="en">Java</span> נכונה" על כל מכונה — הכול בתוך ה-<span class="en">image</span>.</li>
+        <li>אותו <span class="en">image</span> בדיוק עובר <span class="en">dev → CI → ענן</span> — בלי הפתעות.</li>
+      </ul>
+      <div class="box note"><div class="bt">המסע של ה-<span class="en">image</span> בקורס</div>נבנה אותו היום, נבנה אותו גם ב-<span class="en">CI</span>, נדחוף ל-<span class="en">registry</span>, ובמפגש 6 נריץ אותו בענן מ-<span class="en">ECR</span>.</div>
+    </div>
+  </section>
+
+  <!-- 7 · DIVIDER 2 -->
+  <section class="slide divider" data-topic="חלק 2 · Images">
+    <div class="s-wrap">
+      <div class="pnum">חלק 2</div>
+      <h2><span class="en">Images</span>, שכבות ו-<span class="en">Registries</span></h2>
+      <p>אבני הבניין של <span class="en">Docker</span> לפני שנכתוב <span class="en">Dockerfile</span>.</p>
+    </div>
+  </section>
+
+  <!-- 8 · IMAGE VS CONTAINER -->
+  <section class="slide" data-topic="חלק 2 · Images">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2><span class="en">Image</span> מול <span class="en">Container</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><b><span class="en">Image</span></b> = "תבנית" קפואה לקריאה בלבד (כמו קובץ התקנה). <b><span class="en">Container</span></b> = מופע <b>רץ</b> של ה-<span class="en">image</span>. מ-<span class="en">image</span> אחד אפשר להריץ הרבה <span class="en">containers</span>.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">image</span> = שכבות לקריאה-בלבד מוערמות. בהרצה, <span class="en">Docker</span> מוסיף שכבת כתיבה דקה למעלה ומפעיל את התהליך. אנלוגיה: <span class="en">image</span> = <span class="en">class</span>, <span class="en">container</span> = <span class="en">object</span>.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · LAYERS -->
+  <section class="slide" data-topic="חלק 2 · Images">
+    <div class="s-wrap">
+      <span class="kicker">איך נבנה image</span>
+      <h2>שכבות (<span class="en">Layers</span>) ו-<span class="en">Build Cache</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">כל הוראה ב-<span class="en">Dockerfile</span> יוצרת <b>שכבה</b>. אם שכבה לא השתנתה, <span class="en">Docker</span> משתמש מחדש ב-<span class="en">cache</span> ומדלג עליה — בנייה מהירה הרבה יותר.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">השכבות ממוזערות (<span class="en">cached</span>) לפי תוכן. <b>סדר ההוראות חשוב</b>: שמים דברים שמשתנים נדירות (תלויות) מוקדם, ודברים שמשתנים הרבה (הקוד) מאוחר — כדי למקסם פגיעות <span class="en">cache</span>.</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt">למה אכפת לנו</div>ב-<span class="en">CI</span> ובענן בונים <span class="en">images</span> שוב ושוב — <span class="en">cache</span> טוב חוסך דקות יקרות בכל בנייה.</div>
+    </div>
+  </section>
+
+  <!-- 10 · REGISTRIES -->
+  <section class="slide" data-topic="חלק 2 · Images">
+    <div class="s-wrap">
+      <span class="kicker">איפה images חיים</span>
+      <h2><span class="en">Registries</span></h2>
+      <p><span class="en">registry</span> הוא "מחסן" ל-<span class="en">images</span> — דוחפים (<span class="en">push</span>) ומושכים (<span class="en">pull</span>), בדיוק כמו <span class="en">Git</span> לקוד.</p>
+      <table>
+        <tr><th><span class="en">registry</span></th><th>מתי בקורס</th></tr>
+        <tr><td><span class="en">Docker Hub</span></td><td>היום — <span class="en">registry</span> ציבורי נוח להתחלה</td></tr>
+        <tr><td><span class="en">Amazon ECR</span></td><td>מפגש 6 — <span class="en">registry</span> פרטי ב-<span class="en">AWS</span>, ממנו נפרוס לענן</td></tr>
+      </table>
+      <div class="box note"><div class="bt">פורמט שם <span class="en">image</span></div><code>user/tasks-api:1.0</code> — שם משתמש/מאגר<span class="en">:tag</span>. ה-<span class="en">tag</span> מזהה גרסה.</div>
+    </div>
+  </section>
+
+  <!-- 11 · DIVIDER 3 -->
+  <section class="slide divider" data-topic="חלק 3 · Dockerfile">
+    <div class="s-wrap">
+      <div class="pnum">חלק 3</div>
+      <h2>כותבים <span class="en">Dockerfile</span></h2>
+      <p>המתכון שאומר ל-<span class="en">Docker</span> איך לבנות את ה-<span class="en">image</span> של ה-<span class="en">Tasks API</span>.</p>
+    </div>
+  </section>
+
+  <!-- 12 · DOCKERFILE INSTRUCTIONS -->
+  <section class="slide" data-topic="חלק 3 · Dockerfile">
+    <div class="s-wrap">
+      <span class="kicker">הוראות יסוד</span>
+      <h2>ההוראות שצריך להכיר</h2>
+      <table>
+        <tr><th>הוראה</th><th>מה היא עושה</th></tr>
+        <tr><td><code>FROM</code></td><td><span class="en">image</span> בסיס להתחיל ממנו (למשל <span class="en">Java runtime</span>)</td></tr>
+        <tr><td><code>WORKDIR</code></td><td>תיקיית העבודה בתוך ה-<span class="en">image</span></td></tr>
+        <tr><td><code>COPY</code></td><td>העתקת קבצים מהפרויקט אל ה-<span class="en">image</span></td></tr>
+        <tr><td><code>RUN</code></td><td>הרצת פקודה בזמן הבנייה (למשל התקנה)</td></tr>
+        <tr><td><code>EXPOSE</code></td><td>תיעוד הפורט שהאפליקציה מאזינה עליו</td></tr>
+        <tr><td><code>ENTRYPOINT</code> / <code>CMD</code></td><td>הפקודה שרצה כשהקונטיינר עולה</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 13 · OUR DOCKERFILE -->
+  <section class="slide" data-topic="חלק 3 · Dockerfile">
+    <div class="s-wrap">
+      <span class="kicker">קוד · ה-Dockerfile שלנו</span>
+      <h2>אורזים את ה-<span class="en">JAR</span></h2>
+      <span class="filename">docker/Dockerfile</span>
+<pre><span class="k">FROM</span> eclipse-temurin:17-jre      <span class="c"># בסיס: Java 17 runtime</span>
+<span class="k">WORKDIR</span> /app
+<span class="k">COPY</span> app/target/tasks-api.jar app.jar   <span class="c"># ה-JAR שבנינו</span>
+<span class="k">EXPOSE</span> 8080
+<span class="k">ENTRYPOINT</span> [<span class="s">"java"</span>,<span class="s">"-jar"</span>,<span class="s">"app.jar"</span>]</pre>
+      <div class="box note"><div class="bt">שני צעדים היום</div>קודם בונים את ה-<span class="en">JAR</span> (<code>mvn package</code>), ואז <code>docker build</code> אורז אותו. <b>במפגש 6</b> נעבור ל-<span class="en">multi-stage build</span> — <span class="en">docker build</span> אחד שבונה גם את ה-<span class="en">JAR</span> וגם מקטין את ה-<span class="en">image</span>.</div>
+    </div>
+  </section>
+
+  <!-- 14 · RUN COMMANDS -->
+  <section class="slide" data-topic="חלק 3 · Dockerfile">
+    <div class="s-wrap">
+      <span class="kicker">פקודות הרצה</span>
+      <h2>בנייה והרצה של <span class="en">container</span></h2>
+      <table>
+        <tr><th>פקודה</th><th>מה היא עושה</th></tr>
+        <tr><td><code>docker build -t name .</code></td><td>בונה <span class="en">image</span> בשם <code>name</code></td></tr>
+        <tr><td><code>docker run -p 8080:8080</code></td><td>מריץ + ממפה פורט מארח←קונטיינר</td></tr>
+        <tr><td><code>-e KEY=val</code></td><td>מעביר משתנה סביבה</td></tr>
+        <tr><td><code>docker ps</code> / <code>logs</code></td><td>קונטיינרים רצים / לוגים</td></tr>
+        <tr><td><code>docker exec -it id sh</code></td><td>כניסה ל-<span class="en">shell</span> בתוך הקונטיינר</td></tr>
+      </table>
+      <div class="box note"><div class="bt"><span class="en">Volumes</span> (בקצרה)</div>קונטיינר הוא חולף — כשמוחקים אותו, מה שנכתב בתוכו נעלם. <span class="en">volume</span> מחבר תיקייה קבועה לשמירת נתונים. אצלנו הנתונים יישמרו בענן (<span class="en">DynamoDB</span>, מפגש 5), לא בקונטיינר.</div>
+    </div>
+  </section>
+
+  <!-- 15 · DEMO build/run -->
+  <section class="slide" data-topic="הדגמה · בניית שלב 3">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> בונים ומריצים את ה-<span class="en">container</span></div>
+        <ol class="steps">
+          <li><b>גרסת הייחוס של היום:</b>
+<pre><span class="k">git checkout</span> <span class="o">v3-docker</span></pre></li>
+          <li><b>בונים את ה-<span class="en">JAR</span></b> ואז את ה-<span class="en">image</span>:
+<pre><span class="k">mvn</span> <span class="o">-pl app -q package</span>
+<span class="k">docker build</span> <span class="o">-f docker/Dockerfile -t tasks-api .</span></pre></li>
+          <li><b>מריצים</b> וממפים פורט:
+<pre><span class="k">docker run</span> <span class="o">-p 8080:8080 tasks-api</span></pre></li>
+          <li><b>בודקים</b> (חלון שני):
+<pre><span class="k">curl</span> <span class="o">localhost:8080/health</span>   <span class="c"># {"status":"UP",...}</span></pre></li>
+          <li><b>לוגים וכניסה פנימה:</b>
+<pre><span class="k">docker ps</span>
+<span class="k">docker logs</span> <span class="o">&lt;id&gt;</span></pre></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 16 · DIVIDER 4 -->
+  <section class="slide divider" data-topic="חלק 4 · compose">
+    <div class="s-wrap">
+      <div class="pnum">חלק 4</div>
+      <h2><span class="en">docker compose</span></h2>
+      <p>להריץ את האפליקציה (ובהמשך כמה שירותים יחד) בפקודה אחת.</p>
+    </div>
+  </section>
+
+  <!-- 17 · WHAT IS COMPOSE -->
+  <section class="slide" data-topic="חלק 4 · compose">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>מה זה <span class="en">docker compose</span>?</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">קובץ <span class="en">YAML</span> אחד שמתאר את כל השירותים של הסביבה המקומית, ומריץ את כולם יחד עם <code>docker compose up</code> — בלי לזכור פקודות <code>docker run</code> ארוכות.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">compose</span> מגדיר שירותים, רשת משותפת ביניהם, פורטים, משתני סביבה ו-<span class="en">volumes</span> — באופן הצהרתי. השירותים מדברים זה עם זה לפי שם השירות.</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt">היום שירות אחד · מפגש 5 שניים</div>היום נריץ רק את האפליקציה. <b>במפגש 5</b> נוסיף לאותו קובץ שירות <span class="en">LocalStack</span> (חיקוי <span class="en">AWS</span> מקומי) — וזה בדיוק הכוח של <span class="en">compose</span>.</div>
+    </div>
+  </section>
+
+  <!-- 18 · OUR COMPOSE -->
+  <section class="slide" data-topic="חלק 4 · compose">
+    <div class="s-wrap">
+      <span class="kicker">קוד · compose</span>
+      <h2>קובץ ה-<span class="en">compose</span> שלנו</h2>
+      <span class="filename">docker/docker-compose.yml</span>
+<pre><span class="o">services</span>:
+  <span class="o">app</span>:
+    <span class="o">build</span>:
+      <span class="o">context</span>: ..
+      <span class="o">dockerfile</span>: docker/Dockerfile
+    <span class="o">ports</span>:
+      - <span class="s">"8080:8080"</span>
+    <span class="o">environment</span>:
+      - STORAGE=memory          <span class="c"># במפגש 5 -> dynamodb + localstack</span></pre>
+      <p class="muted">הרצה: <code>docker compose -f docker/docker-compose.yml up</code></p>
+    </div>
+  </section>
+
+  <!-- 19 · DEMO compose -->
+  <section class="slide" data-topic="הדגמה · compose">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> מריצים עם <span class="en">compose</span></div>
+        <ol class="steps">
+          <li><b>מעלים את הסביבה</b> בפקודה אחת:
+<pre><span class="k">docker compose</span> <span class="o">-f docker/docker-compose.yml up --build</span></pre></li>
+          <li><b>בודקים</b> שהשירות חי:
+<pre><span class="k">curl</span> <span class="o">localhost:8080/health</span></pre></li>
+          <li><b>מורידים</b> את הסביבה:
+<pre><span class="k">docker compose</span> <span class="o">-f docker/docker-compose.yml down</span></pre></li>
+        </ol>
+        <div class="box note"><div class="bt">שימו לב</div><code>docker compose</code> (עם רווח) היא הגרסה הנוכחית (<span class="en">v2</span>), מובנית ב-<span class="en">Docker</span> — לא <code>docker-compose</code> הישן.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 20 · DIVIDER 5 -->
+  <section class="slide divider" data-topic="חלק 5 · registry + CI">
+    <div class="s-wrap">
+      <div class="pnum">חלק 5</div>
+      <h2>דחיפה ל-<span class="en">registry</span> + <span class="en">CI</span></h2>
+      <p>נשתף את ה-<span class="en">image</span> דרך <span class="en">Docker Hub</span>, ונרחיב את ה-<span class="en">CI</span> שיבנה אותו אוטומטית.</p>
+    </div>
+  </section>
+
+  <!-- 21 · DEMO push -->
+  <section class="slide" data-topic="הדגמה · Docker Hub">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> דוחפים ל-<span class="en">Docker Hub</span></div>
+        <ol class="steps">
+          <li><b>התחברות</b> (חד-פעמי):
+<pre><span class="k">docker login</span></pre></li>
+          <li><b>תיוג</b> ה-<span class="en">image</span> בשם המלא עם <span class="en">tag</span>:
+<pre><span class="k">docker tag</span> <span class="o">tasks-api &lt;user&gt;/tasks-api:1.0</span></pre></li>
+          <li><b>דחיפה</b> ל-<span class="en">registry</span>:
+<pre><span class="k">docker push</span> <span class="o">&lt;user&gt;/tasks-api:1.0</span></pre></li>
+          <li>עכשיו כל אחד יכול למשוך ולהריץ: <code>docker run &lt;user&gt;/tasks-api:1.0</code>.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 22 · EXTEND CI -->
+  <section class="slide" data-topic="חלק 5 · CI">
+    <div class="s-wrap">
+      <span class="kicker">קוד · מרחיבים את ה-CI</span>
+      <h2>ה-<span class="en">CI</span> בונה גם את ה-<span class="en">image</span></h2>
+      <p>מוסיפים צעד ל-<span class="en">job</span> הקיים ממפגש 2 — אחרי הבדיקות, ה-<span class="en">JAR</span> כבר קיים, אז בונים את ה-<span class="en">image</span>:</p>
+      <span class="filename">.github/workflows/ci.yml (תוספת)</span>
+<pre>      - <span class="o">name</span>: Build and test
+        <span class="o">run</span>: mvn -B verify
+      - <span class="o">name</span>: Build Docker image
+        <span class="o">run</span>: docker build -f docker/Dockerfile -t tasks-api:${{ github.sha }} .</pre>
+      <div class="box note"><div class="bt">בונים, עדיין לא דוחפים</div>ב-<span class="en">CI</span> רק מוודאים שה-<span class="en">image</span> נבנה. הדחיפה ל-<span class="en">registry</span> בענן (<span class="en">ECR</span>) תתווסף ל-<span class="en">CD</span> במפגש 7.</div>
+    </div>
+  </section>
+
+  <!-- 23 · LAB -->
+  <section class="slide" data-topic="מעבדה">
+    <div class="s-wrap">
+      <div class="block lab">
+        <div class="hd"><span class="badge">מעבדה</span> בנו את שלב 3 — 25 דקות</div>
+        <ol class="steps">
+          <li><b>כתבו</b> את <code>docker/Dockerfile</code> (מהשקופית), ובנו: <code>mvn -pl app package</code> ואז <code>docker build</code>.</li>
+          <li><b>הריצו</b> את הקונטיינר עם <code>-p 8080:8080</code> ובדקו <code>/health</code> ו-<code>POST /tasks</code>.</li>
+          <li><b>בדקו לוגים</b> עם <code>docker logs</code>, ונסו <code>docker exec -it</code>.</li>
+          <li><b>הריצו עם <span class="en">compose</span>:</b> <code>docker compose ... up --build</code>.</li>
+          <li><b>דחפו</b> את ה-<span class="en">image</span> ל-<span class="en">Docker Hub</span> שלכם.</li>
+          <li><b>אתגר:</b> הוסיפו את צעד בניית ה-<span class="en">image</span> ל-<code>ci.yml</code> וראו אותו רץ.</li>
+        </ol>
+        <div class="box note" style="margin-top:6px"><div class="bt">סימן הצלחה</div>הקונטיינר עונה ב-<code>/health</code>, ה-<span class="en">image</span> נמצא ב-<span class="en">Docker Hub</span>, וה-<span class="en">CI</span> בונה אותו.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 24 · HW -->
+  <section class="slide" data-topic="משימת בית">
+    <div class="s-wrap">
+      <div class="block hw">
+        <div class="hd"><span class="badge">משימת בית</span> לפני מפגש 4</div>
+        <ol class="steps">
+          <li><b>הוסיפו <code>.dockerignore</code></b> (למשל <code>target/</code>, <code>.git</code>) — כדי לא לשלוח קבצים מיותרים ל-<span class="en">build context</span>.</li>
+          <li><b>הקטינו את ה-<span class="en">image</span>:</b> בדקו את גודלו (<code>docker images</code>), ונסו <span class="en">base image</span> רזה יותר (למשל <span class="en">alpine</span>/<span class="en">jre</span> מינימלי). השוו גדלים.</li>
+          <li><b>ודאו</b> שחשבון ה-<span class="en">AWS</span> (<span class="en">Free Plan</span>) פעיל — <b>נשתמש בו במפגש הבא!</b></li>
+        </ol>
+        <div class="box warn" style="margin-top:6px"><div class="bt">טיזר למפגש 6</div>ה-<span class="en">multi-stage build</span> ייקח את הקטנת ה-<span class="en">image</span> צעד קדימה — ובלי הצעד הידני של <code>mvn package</code>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 25 · RECAP + NEXT -->
+  <section class="slide" data-topic="סיכום">
+    <div class="s-wrap">
+      <span class="kicker">סיכום מפגש 3</span>
+      <h2>מה בנינו, ולאן ממשיכים</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3 style="margin-top:0">שלב 3 הושלם — <span class="en">Package</span></h3>
+          <ul>
+            <li>הבנו קונטיינרים, <span class="en">images</span>, שכבות ו-<span class="en">registries</span>.</li>
+            <li>ארזנו את ה-<span class="en">Tasks API</span> ל-<span class="en">image</span> והרצנו אותו.</li>
+            <li>הרצנו עם <span class="en">compose</span>, דחפנו ל-<span class="en">Docker Hub</span>, ובנינו ב-<span class="en">CI</span>.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">הבא — מפגש 4: <span class="en">AWS</span></h3>
+          <ul>
+            <li>יסודות <span class="en">AWS</span>: <span class="en">IAM</span>, עלויות, <span class="en">EC2</span> ו-<span class="en">Lambda</span>.</li>
+            <li>נריץ את ה-<span class="en">image</span> שבנינו על שרת אמיתי בענן.</li>
+          </ul>
+          <div class="box warn" style="margin-top:6px"><div class="bt">לא לשכוח</div>חשבון <span class="en">AWS</span> (<span class="en">Free Plan</span>) פעיל, וה-<span class="en">image</span> ב-<span class="en">Docker Hub</span>.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 26 · END -->
+  <section class="slide cover" data-topic="סוף">
+    <div class="s-wrap">
+      <div class="eyebrow">מפגש 3 הושלם · שלב <span class="en">Package</span></div>
+      <h1>שאלות?<br><span class="accent">נתראה במפגש 4 — <span class="en">AWS</span> בענן</span></h1>
+      <p class="sub">תזכורת: <code>.dockerignore</code> ו-<span class="en">image</span> רזה, והכי חשוב — חשבון <span class="en">AWS</span> פעיל למפגש הבא.</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button id="prev" onclick="go(-1)">→ הקודם</button>
+  <div style="text-align:center"><div class="count" id="count">1 / 1</div><div class="hint">מקשים: ← הבא · → הקודם</div></div>
+  <button id="next" class="primary" onclick="go(1)">הבא ←</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const stage = document.getElementById('stage');
+  let i = 0;
+  function clamp(n){ return Math.max(0, Math.min(slides.length-1, n)); }
+  function fit(){
+    const wrap = slides[i] && slides[i].querySelector('.s-wrap');
+    if(!wrap) return;
+    wrap.style.transform='none';
+    const pad=22;
+    const availH = stage.clientHeight - pad*2;
+    const availW = stage.clientWidth - pad*2;
+    const h = wrap.offsetHeight, w = wrap.offsetWidth;
+    if(!h || !w) return;
+    const scale = Math.min(1, availH/h, availW/w);
+    wrap.style.transform = scale<0.999 ? 'scale('+scale.toFixed(4)+')' : 'none';
+  }
+  function render(){
+    slides.forEach((s,k)=> s.classList.toggle('active', k===i));
+    document.getElementById('count').textContent = (i+1)+' / '+slides.length;
+    document.getElementById('pbar').style.width = ((i+1)/slides.length*100)+'%';
+    document.getElementById('topic').textContent = 'מפגש 3 — ' + (slides[i].dataset.topic||'');
+    document.getElementById('prev').disabled = (i===0);
+    document.getElementById('next').disabled = (i===slides.length-1);
+    requestAnimationFrame(fit);
+    history.replaceState(null,'', '#'+(i+1));
+  }
+  function go(d){ i = clamp(i+d); render(); }
+  function jump(n){ i = clamp(n); render(); }
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowLeft' || e.key===' ' || e.key==='PageDown'){ e.preventDefault(); go(1); }
+    else if(e.key==='ArrowRight' || e.key==='PageUp'){ e.preventDefault(); go(-1); }
+    else if(e.key==='Home'){ jump(0); }
+    else if(e.key==='End'){ jump(slides.length-1); }
+  });
+  function toggleFs(){ if(!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); } else { document.exitFullscreen && document.exitFullscreen(); } }
+  window.addEventListener('resize', ()=>requestAnimationFrame(fit));
+  document.addEventListener('fullscreenchange', ()=>requestAnimationFrame(fit));
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>requestAnimationFrame(fit)); }
+  const start = parseInt((location.hash||'').replace('#',''),10);
+  if(!isNaN(start)) i = clamp(start-1);
+  render();
+</script>
+</body>
+</html>

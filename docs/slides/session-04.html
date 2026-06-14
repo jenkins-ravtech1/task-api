@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מפגש 4 · AWS — Deploy I</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0f2e4d; --blue:#1F4E79; --blue2:#2E5496; --accent:#ff9900;
+    --bg:#0f1722; --stage:#eef2f7; --card:#ffffff; --ink:#1a2330; --muted:#5b6776; --line:#dfe6ee;
+    --simple:#0ea5b7; --tech:#6366f1; --demo:#16a34a; --lab:#ff9900; --hw:#7c3aed;
+    --code-bg:#0b2233; --code-ink:#e6f0fa;
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  html{direction:rtl}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); overflow:hidden;
+    font-family:"Heebo","Segoe UI","Arial",sans-serif; direction:rtl; text-align:right;
+  }
+  code,.en,kbd{direction:ltr; unicode-bidi:isolate;}
+  code{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace; font-size:.85em;
+       background:#eef3f9; color:#16324f; padding:.06em .42em; border-radius:6px; border:1px solid #dbe6f1;}
+  kbd{font-family:"JetBrains Mono",monospace; font-size:.8em; background:#1f2937; color:#e5e7eb;
+      border:1px solid #374151; border-bottom-width:2px; border-radius:6px; padding:1px 7px}
+
+  /* chrome */
+  .topbar{position:fixed; top:0; inset-inline:0; height:50px; z-index:30;
+    background:linear-gradient(90deg,var(--navy),var(--blue2)); color:#fff;
+    display:flex; align-items:center; gap:14px; padding:0 18px; box-shadow:0 2px 10px rgba(0,0,0,.25)}
+  .topbar .brand{font-weight:800; font-size:15px}
+  .topbar .sep{opacity:.5}
+  .topbar .topic{font-size:14px; opacity:.92; font-weight:500}
+  .topbar .spacer{flex:1}
+  .topbar button{background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.25);
+    border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer; font-family:inherit}
+  .topbar button:hover{background:rgba(255,255,255,.26)}
+  .pbar{position:fixed; top:50px; inset-inline:0; height:4px; background:#cdd7e2; z-index:30}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),#ffc46b); transition:width .25s}
+
+  .stage{position:fixed; top:54px; bottom:58px; inset-inline:0; overflow:hidden; background:var(--stage)}
+  .navbar{position:fixed; bottom:0; inset-inline:0; height:58px; z-index:30; background:#fff;
+    border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 18px}
+  .navbar .count{font-weight:700; color:var(--muted); font-size:14px; direction:ltr; unicode-bidi:isolate}
+  .navbar .hint{font-size:12.5px; color:#9aa6b2}
+  .navbar button{font-family:inherit; cursor:pointer; border-radius:10px; padding:9px 18px; font-size:15px; font-weight:700;
+    border:1px solid var(--line); background:#fff; color:var(--navy)}
+  .navbar button.primary{background:var(--navy); color:#fff; border-color:var(--navy)}
+  .navbar button:disabled{opacity:.4; cursor:default}
+
+  /* slides */
+  .slide{display:none; position:absolute; inset:0; padding:18px 22px}
+  .slide.active{display:flex; align-items:center; justify-content:center; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+  .s-wrap{max-width:1000px; width:100%; margin:0 auto; transform-origin:center center}
+  .kicker{display:inline-block; font-size:13px; font-weight:700; color:var(--accent);
+    text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px}
+  .slide h2{font-size:30px; font-weight:800; color:var(--navy); margin:0 0 14px; line-height:1.2}
+  .slide h3{font-size:20px; font-weight:800; color:var(--blue2); margin:18px 0 8px}
+  .slide p{font-size:17.5px; line-height:1.6; margin:0 0 12px}
+  .slide ul,.slide ol{font-size:17px; line-height:1.6; margin:8px 0; padding-inline-start:24px}
+  .slide li{margin:7px 0}
+  .lead{font-size:19px; color:#33414f}
+  .muted{color:var(--muted)}
+
+  /* cover + divider */
+  .cover{background:radial-gradient(1200px 500px at 80% -10%,#1c476f 0,transparent 60%),linear-gradient(135deg,var(--navy),var(--blue) 70%); color:#fff}
+  .cover .eyebrow{font-size:15px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; font-weight:700}
+  .cover h1{font-size:46px; line-height:1.12; margin:10px 0 8px; font-weight:900}
+  .cover h1 .accent{color:var(--accent)}
+  .cover .sub{font-size:20px; opacity:.95; max-width:760px}
+  .cover .pills{margin-top:22px; display:flex; flex-wrap:wrap; gap:10px}
+  .cover .pill{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:8px 16px; font-size:14.5px}
+  .divider{background:linear-gradient(135deg,#13243a,#22507e); color:#fff}
+  .divider .pnum{font-size:18px; font-weight:700; color:var(--accent); letter-spacing:.1em}
+  .divider h2{color:#fff; font-size:40px; margin:6px 0 10px}
+  .divider p{font-size:19px; opacity:.92; max-width:720px}
+
+  /* cards / boxes */
+  .grid{display:grid; gap:16px}
+  .two{grid-template-columns:1fr 1fr}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:0 4px 16px rgba(15,46,77,.06)}
+  .box{border-radius:14px; padding:16px 18px; border:1px solid var(--line)}
+  .box .bt{font-weight:800; font-size:14px; margin-bottom:8px; display:flex; align-items:center; gap:8px}
+  .box .bt::before{content:""; width:10px; height:10px; border-radius:50%}
+  .box.simple{background:#e7f8fb; border-color:#bde9f0}
+  .box.simple .bt{color:#0b7c8c} .box.simple .bt::before{background:var(--simple)}
+  .box.tech{background:#eef0fe; border-color:#d3d8fb}
+  .box.tech .bt{color:#4348c7} .box.tech .bt::before{background:var(--tech)}
+  .box.note{background:#f0f7ff; border-color:#cfe3fb}
+  .box.note .bt{color:var(--blue2)} .box.note .bt::before{background:var(--blue2)}
+  .box.warn{background:#fff4ed; border-color:#ffd9bf}
+  .box.warn .bt{color:#c2410c} .box.warn .bt::before{background:#ea580c}
+
+  /* demo / lab / hw */
+  .block{border-radius:var(--radius); padding:18px 20px; border:1px solid var(--line); background:#fff}
+  .block > .hd{display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; margin-bottom:6px}
+  .block .badge{font-size:12px; font-weight:800; color:#fff; padding:3px 10px; border-radius:999px}
+  .block.demo{border-inline-start:6px solid var(--demo); background:#f1faf3}
+  .block.demo .badge{background:var(--demo)} .block.demo .hd{color:#15803d}
+  .block.lab{border-inline-start:6px solid var(--lab); background:#fff8ee}
+  .block.lab .badge{background:var(--lab)} .block.lab .hd{color:#b45309}
+  .block.hw{border-inline-start:6px solid var(--hw); background:#f6f1fe}
+  .block.hw .badge{background:var(--hw)} .block.hw .hd{color:#6b21a8}
+  .steps{counter-reset:st; list-style:none; padding:0; margin:8px 0 0}
+  .steps > li{position:relative; padding:4px 40px 14px 0; margin:0}
+  .steps > li::before{counter-increment:st; content:counter(st); position:absolute; inset-inline-start:0; top:0;
+    width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff; font-weight:800; font-size:14px;
+    display:flex; align-items:center; justify-content:center}
+  .block.demo .steps>li::before{background:var(--demo)} .block.lab .steps>li::before{background:var(--lab)}
+  .block.hw .steps>li::before{background:var(--hw)}
+  .steps > li:not(:last-child){border-inline-start:2px dashed #d7dee7; margin-inline-start:13px}
+  .steps b{color:var(--navy)}
+
+  /* code */
+  pre{direction:ltr; text-align:left; background:var(--code-bg); color:var(--code-ink); border-radius:12px;
+    padding:14px 16px; overflow-x:auto; font-family:"JetBrains Mono",monospace; font-size:14px; line-height:1.55; margin:10px 0;
+    border:1px solid #143049}
+  pre .c{color:#7fa7c7}
+  pre .k{color:#ffb86c}
+  pre .s{color:#a5e6a5}
+  pre .o{color:#9fd0ff}
+  .filename{direction:ltr; text-align:left; font-family:"JetBrains Mono",monospace; font-size:12px; color:#9fb6cb;
+    background:#0b2233; border:1px solid #143049; border-bottom:0; border-radius:10px 10px 0 0; padding:6px 12px; margin:10px 0 -10px; display:inline-block}
+
+  /* tables */
+  table{width:100%; border-collapse:collapse; direction:rtl; background:#fff; border-radius:12px; overflow:hidden; margin:10px 0; font-size:16px}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:right; vertical-align:top}
+  th{background:var(--blue); color:#fff; font-weight:700}
+  tr:nth-child(even) td{background:#f4f8fc}
+  .agenda td.t{white-space:nowrap; font-weight:700; color:var(--blue2); direction:ltr; unicode-bidi:isolate; text-align:right; width:130px}
+
+  /* flow */
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; direction:ltr; justify-content:center; margin:14px 0}
+  .flow .n{background:#fff; border:2px solid var(--blue2); color:var(--navy); border-radius:10px; padding:8px 14px; font-weight:700; font-size:15px}
+  .flow .a{color:var(--accent); font-weight:800; font-size:20px}
+
+  /* build map */
+  .buildmap{position:relative; display:flex; justify-content:space-between; direction:rtl; margin:18px 6px 8px}
+  .buildmap::before{content:""; position:absolute; top:21px; inset-inline:24px; height:3px; background:#cdd7e2}
+  .bm{position:relative; width:12%; text-align:center}
+  .bm .dot{width:44px; height:44px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:16px; border:3px solid #cdd7e2; background:#fff; color:#9aa6b2}
+  .bm .lab2{font-size:12px; margin-top:7px; color:#9aa6b2; font-weight:700; line-height:1.2}
+  .bm.done .dot{background:#16a34a; border-color:#16a34a; color:#fff}
+  .bm.done .lab2{color:#15803d}
+  .bm.now .dot{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 0 5px rgba(255,153,0,.22)}
+  .bm.now .lab2{color:var(--navy)}
+
+  @media (max-width:760px){ .two{grid-template-columns:1fr} .cover h1{font-size:34px} .slide h2{font-size:24px} }
+  @media print{
+    body{overflow:visible}
+    .topbar,.navbar,.pbar{display:none}
+    .stage{position:static; overflow:visible; top:0; bottom:0}
+    .slide{position:static !important; display:block !important; min-height:auto; page-break-after:always; padding:0 0 24px; border-bottom:2px solid #ccc}
+    .s-wrap{transform:none !important}
+    .cover,.divider{color:#000; background:#fff !important}
+    .cover h1,.divider h2{color:var(--navy)}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">מקוד לענן</span><span class="sep">·</span>
+  <span class="topic" id="topic">מפגש 4 — AWS</span>
+  <span class="spacer"></span>
+  <button onclick="toggleFs()">מסך מלא</button>
+</div>
+<div class="pbar"><i id="pbar"></i></div>
+
+<div class="stage" id="stage">
+
+  <!-- 1 · COVER -->
+  <section class="slide cover" data-topic="פתיחה">
+    <div class="s-wrap">
+      <div class="eyebrow">מפגש 4 מתוך 8 · שלב <span class="en">Deploy</span> · 1</div>
+      <h1>יסודות AWS<br><span class="accent">מריצים את האפליקציה בענן</span></h1>
+      <p class="sub">יש לנו <span class="en">image</span> שרץ בכל מקום (מפגש 3). היום נפתח חשבון בבטחה, נבין <span class="en">IAM</span> ועלויות, ונריץ את ה-<span class="en">Tasks API</span> על שרת אמיתי ב-<span class="en">AWS</span> — ונכיר גם את <span class="en">Lambda</span>.</p>
+      <div class="pills">
+        <span class="pill">16:00–19:00</span>
+        <span class="pill"><span class="en">Budgets</span> · עלויות</span>
+        <span class="pill"><span class="en">IAM</span></span>
+        <span class="pill"><span class="en">EC2</span></span>
+        <span class="pill"><span class="en">Lambda</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · AGENDA -->
+  <section class="slide" data-topic="אג׳נדה">
+    <div class="s-wrap">
+      <span class="kicker">לוח הזמנים של היום</span>
+      <h2>מה נעשה ב-3 השעות</h2>
+      <div class="grid two">
+        <div class="card">
+          <table class="agenda">
+            <tr><th style="width:130px">זמן</th><th>פעילות</th></tr>
+            <tr><td class="t">16:00–16:15</td><td>חזרה ויעדי המפגש</td></tr>
+            <tr><td class="t">16:15–17:30</td><td>קונסולה, עלויות, <span class="en">IAM</span> + הדגמות</td></tr>
+            <tr><td class="t">17:30–17:40</td><td>הפסקה</td></tr>
+            <tr><td class="t">17:40–18:30</td><td><span class="en">EC2</span> + <span class="en">Lambda</span> + הדגמה</td></tr>
+            <tr><td class="t">18:30–18:55</td><td>מעבדה עצמאית</td></tr>
+            <tr><td class="t">18:55–19:00</td><td>סיכום ומשימת בית</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">בסוף המפגש תדעו</h3>
+          <ul>
+            <li>לנווט בקונסולה ולהגן על עצמכם מחיוב (<span class="en">Budgets</span>).</li>
+            <li>להבין <span class="en">IAM</span>: משתמשים, תפקידים, הרשאות, <span class="en">MFA</span>.</li>
+            <li>להקים שרת <span class="en">EC2</span> ולהתחבר אליו.</li>
+            <li>להריץ את ה-<span class="en">image</span> מהענן ולגשת אליו מהדפדפן.</li>
+            <li>להבין <span class="en">Lambda</span> ומתי הוא עדיף על <span class="en">EC2</span>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · WHERE WE ARE -->
+  <section class="slide" data-topic="איפה אנחנו בבנייה">
+    <div class="s-wrap">
+      <span class="kicker">מפת הבנייה של הפרויקט</span>
+      <h2>איפה אנחנו בבניית ה-<span class="en">Tasks API</span></h2>
+      <div class="buildmap">
+        <div class="bm done"><div class="dot">1</div><div class="lab2">Code</div></div>
+        <div class="bm done"><div class="dot">2</div><div class="lab2">CI</div></div>
+        <div class="bm done"><div class="dot">3</div><div class="lab2">Docker</div></div>
+        <div class="bm now"><div class="dot">4</div><div class="lab2">AWS</div></div>
+        <div class="bm"><div class="dot">5</div><div class="lab2">Data</div></div>
+        <div class="bm"><div class="dot">6</div><div class="lab2">IaC</div></div>
+        <div class="bm"><div class="dot">7</div><div class="lab2">CD</div></div>
+        <div class="bm"><div class="dot">8</div><div class="lab2">Observe</div></div>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <div class="box simple"><div class="bt">היום — שלב 4: <span class="en">Deploy</span> (יסודות AWS)</div><p style="margin:0">לוקחים את ה-<span class="en">image</span> ממפגש 3 ומריצים אותו על שרת <span class="en">EC2</span> אמיתי בענן — ידנית. וגם נטעם <span class="en">serverless</span> עם <span class="en">Lambda</span>.</p></div>
+        <div class="box note"><div class="bt">כבר מאחורינו · הבא</div><p style="margin:0"><b>מפגשים 1–3:</b> קוד, <span class="en">CI</span>, ו-<span class="en">image</span>. <b>מפגש 5:</b> נוסיף נתונים (<span class="en">DynamoDB</span>) ואירועים (<span class="en">SQS/SNS</span>) לאפליקציה.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · DIVIDER 1 -->
+  <section class="slide divider" data-topic="חלק 1 · חשבון ועלויות">
+    <div class="s-wrap">
+      <div class="pnum">חלק 1</div>
+      <h2>חשבון בטוח ועלויות בשליטה</h2>
+      <p>לפני שנוגעים במשהו — מגדירים רשת ביטחון כספית. בענן, טעות יכולה לעלות כסף.</p>
+    </div>
+  </section>
+
+  <!-- 5 · CONSOLE + BILLING -->
+  <section class="slide" data-topic="חלק 1 · חשבון ועלויות">
+    <div class="s-wrap">
+      <span class="kicker">התמצאות</span>
+      <h2>הקונסולה ומודל החיוב</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">הקונסולה היא ממשק הניהול של <span class="en">AWS</span>. שני דברים לשים לב אליהם תמיד: באיזה <span class="en">Region</span> אתם (פינה עליונה), וכמה אתם מוציאים (<span class="en">Billing</span>).</p></div>
+        <div class="box tech"><div class="bt">מודל החיוב (2025+)</div><p style="margin:0"><span class="en">Free Plan</span> חדש: עד <span class="en">$200</span> קרדיט, בתוקף 6 חודשים או עד שייגמר — המוקדם מביניהם. עוצר לפני חיוב. קיימים גם 30+ שירותים תמיד‑חינמיים.</p></div>
+      </div>
+      <div class="box warn" style="margin-top:14px"><div class="bt">החוק הראשון בענן</div>כל משאב שמדליקים — צריך לדעת לכבות. נסיים כל מפגש בכיבוי/מחיקה, ונתחיל היום בהגדרת התראות תקציב.</div>
+    </div>
+  </section>
+
+  <!-- 6 · DEMO budget -->
+  <section class="slide" data-topic="הדגמה · תקציב">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> רשת ביטחון: <span class="en">Budget</span> + התראה</div>
+        <ol class="steps">
+          <li>בקונסולה: <span class="en">Billing and Cost Management</span> → <span class="en">Budgets</span> → <span class="en">Create budget</span>.</li>
+          <li>בוחרים <b><span class="en">Cost budget</span></b>, תקופה <b>חודשית</b>, וסכום (למשל <span class="en">$10</span>).</li>
+          <li>מוסיפים <b><span class="en">alert threshold</span></b> (למשל 80%) עם האימייל שלכם.</li>
+          <li>שומרים — תקבלו מייל אם מתקרבים לסכום.</li>
+        </ol>
+        <div class="box note"><div class="bt">למה דווקא קודם</div>זו ההרגלה הכי חשובה: לפני שמדליקים משאבים, מוודאים שיש מי "שיצעק" אם העלות מטפסת.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · DIVIDER 2 -->
+  <section class="slide divider" data-topic="חלק 2 · IAM">
+    <div class="s-wrap">
+      <div class="pnum">חלק 2</div>
+      <h2><span class="en">IAM</span>: מי מורשה לעשות מה</h2>
+      <p>שירות ההרשאות של <span class="en">AWS</span>. הבסיס לאבטחה — והצד שלכם במודל האחריות המשותפת.</p>
+    </div>
+  </section>
+
+  <!-- 8 · IAM CONCEPTS -->
+  <section class="slide" data-topic="חלק 2 · IAM">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>אבני הבניין של <span class="en">IAM</span></h2>
+      <table>
+        <tr><th>רכיב</th><th>מה זה</th></tr>
+        <tr><td><span class="en">User</span></td><td>זהות לאדם או אפליקציה</td></tr>
+        <tr><td><span class="en">Group</span></td><td>אוסף משתמשים עם אותן הרשאות</td></tr>
+        <tr><td><span class="en">Policy</span></td><td>מסמך <span class="en">JSON</span> שמגדיר מה <b>מותר</b> (פעולות על משאבים)</td></tr>
+        <tr><td><span class="en">Role</span></td><td>זהות עם הרשאות ש<b>נלקחת זמנית</b> — למשל ע"י <span class="en">EC2</span> או <span class="en">GitHub</span></td></tr>
+      </table>
+      <div class="box simple"><div class="bt">ההבדל החשוב</div><p style="margin:0"><span class="en">User</span> = מפתחות קבועים. <span class="en">Role</span> = הרשאות זמניות, בלי מפתחות לשמור. <b>תפקידים עדיפים</b> לכל מה שאינו אדם.</p></div>
+    </div>
+  </section>
+
+  <!-- 9 · LEAST PRIVILEGE + MODERN -->
+  <section class="slide" data-topic="חלק 2 · IAM">
+    <div class="s-wrap">
+      <span class="kicker">עקרונות ופרקטיקה עדכנית</span>
+      <h2>הרשאה מינימלית, <span class="en">MFA</span>, ותפקידים</h2>
+      <ul>
+        <li><b>הרשאה מינימלית (<span class="en">least privilege</span>):</b> נותנים רק את מה שצריך, לא יותר.</li>
+        <li><b><span class="en">MFA</span>:</b> אימות דו-שלבי — חובה ל-<span class="en">root</span> ולמשתמשים.</li>
+        <li><b>לא משתמשים ב-<span class="en">root</span></b> לעבודה יומיומית.</li>
+      </ul>
+      <div class="box note"><div class="bt">הפרקטיקה העדכנית (2026)</div><p style="margin:0">לצוותים אמיתיים <span class="en">AWS</span> ממליצה על <b><span class="en">IAM Identity Center</span></b> לגישת אנשים (הרשאות זמניות), ועל <b><span class="en">Roles</span></b> לעומסים. בקורס בחשבון יחיד נשתמש במשתמש <span class="en">IAM</span> עם <span class="en">MFA</span> לנוחות — אבל לעומסים (<span class="en">EC2</span> בהמשך, ו-<span class="en">CI/CD</span> במפגש 7) נשתמש ב-<span class="en">Roles</span> ללא מפתחות קבועים. זה החלק המודרני שחשוב להפנים.</p></div>
+    </div>
+  </section>
+
+  <!-- 10 · DEMO IAM -->
+  <section class="slide" data-topic="הדגמה · IAM">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> מאבטחים את החשבון</div>
+        <ol class="steps">
+          <li><b>מפעילים <span class="en">MFA</span> ל-<span class="en">root</span>:</b> <span class="en">Account menu</span> → <span class="en">Security credentials</span> → <span class="en">Assign MFA</span> (אפליקציית <span class="en">authenticator</span>).</li>
+          <li><b>יוצרים משתמש <span class="en">IAM</span>:</b> <span class="en">IAM</span> → <span class="en">Users</span> → <span class="en">Create user</span>, עם גישה לקונסולה.</li>
+          <li><b>מצרפים הרשאות</b> דרך <span class="en">Group</span> (למשל מדיניות ניהול לקורס), ומפעילים <span class="en">MFA</span> גם למשתמש.</li>
+          <li><b>מתנתקים מ-<span class="en">root</span></b> ונכנסים מחדש כמשתמש ה-<span class="en">IAM</span> — מכאן עובדים.</li>
+        </ol>
+        <div class="box warn"><div class="bt">זהירות עם מפתחות</div>אם יוצרים <span class="en">access keys</span> — לעולם לא להעלות ל-<span class="en">Git</span>. בקורס נעדיף <span class="en">Roles</span> ו-<span class="en">OIDC</span> במקום מפתחות.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 · DIVIDER 3 -->
+  <section class="slide divider" data-topic="חלק 3 · EC2">
+    <div class="s-wrap">
+      <div class="pnum">חלק 3</div>
+      <h2><span class="en">EC2</span>: שרת בענן</h2>
+      <p>מכונה וירטואלית שאפשר להקים בדקות. כאן נריץ את ה-<span class="en">container</span> שלנו.</p>
+    </div>
+  </section>
+
+  <!-- 12 · WHAT IS EC2 -->
+  <section class="slide" data-topic="חלק 3 · EC2">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>מה זה <span class="en">EC2</span>?</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">מחשב וירטואלי בענן שאתם שוכרים לפי שעה. בוחרים מערכת הפעלה וגודל, ומקבלים שרת תוך דקות עם כתובת <span class="en">IP</span> ציבורית.</p></div>
+        <div class="box tech"><div class="bt">מושגי מפתח</div><p style="margin:0"><b><span class="en">AMI</span></b> = תבנית מערכת ההפעלה (נשתמש ב-<span class="en">Amazon Linux 2023</span>). <b><span class="en">instance type</span></b> = גודל (<span class="en">t3.micro</span> — חסכוני). <b><span class="en">key pair</span></b> = מפתח להתחברות. <b><span class="en">Security Group</span></b> = חומת אש.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 · SECURITY GROUPS -->
+  <section class="slide" data-topic="חלק 3 · EC2">
+    <div class="s-wrap">
+      <span class="kicker">רשת ואבטחה</span>
+      <h2><span class="en">Security Groups</span> — חומת האש של השרת</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">קובעת איזו תעבורה נכנסת לשרת. כברירת מחדל הכול חסום — צריך לפתוח במפורש את הפורטים שצריך.</p></div>
+        <div class="box tech"><div class="bt">לפרויקט שלנו</div><p style="margin:0">נפתח <b><span class="en">22</span></b> (<span class="en">SSH</span>/<span class="en">Instance Connect</span>) ו-<b><span class="en">8080</span></b> (ה-<span class="en">Tasks API</span>). כלל: מקור (<span class="en">CIDR</span>), פרוטוקול, ופורט. לצמצום סיכון — להגביל ל-<span class="en">IP</span> שלכם.</p></div>
+      </div>
+      <div class="box warn" style="margin-top:14px"><div class="bt">טעות נפוצה</div>"השרת רץ אבל אי-אפשר לגשת" — כמעט תמיד <span class="en">Security Group</span> שלא פתח את הפורט. זה הדבר הראשון לבדוק.</div>
+    </div>
+  </section>
+
+  <!-- 14 · DEMO launch EC2 -->
+  <section class="slide" data-topic="הדגמה · הקמת EC2">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> מקימים שרת <span class="en">EC2</span></div>
+        <p class="muted">אשף ההקמה הנוכחי הוא עמוד אחד:</p>
+        <ol class="steps">
+          <li><span class="en">EC2</span> → <span class="en">Launch instance</span>; נותנים <b>שם</b> (<code>tasks-api</code>).</li>
+          <li><b><span class="en">AMI</span>:</b> <span class="en">Amazon Linux 2023</span> (מסומן <span class="en">Free tier eligible</span>).</li>
+          <li><b><span class="en">Instance type</span>:</b> <span class="en">t3.micro</span> (או <span class="en">t2.micro</span>).</li>
+          <li><b><span class="en">Key pair</span>:</b> יוצרים אחד (או "<span class="en">proceed without</span>" ונשתמש ב-<span class="en">Instance Connect</span>).</li>
+          <li><b><span class="en">Network settings</span>:</b> ב-<span class="en">Security Group</span> מאפשרים <span class="en">SSH</span> ומוסיפים <span class="en">Custom TCP 8080</span>.</li>
+          <li><span class="en">Launch instance</span> → ממתינים שהמצב יהיה <span class="en">Running</span>.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 15 · DEMO run on EC2 -->
+  <section class="slide" data-topic="הדגמה · הרצה בענן">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> מריצים את ה-<span class="en">image</span> על השרת</div>
+        <ol class="steps">
+          <li><b>מתחברים:</b> בוחרים את ה-<span class="en">instance</span> → <span class="en">Connect</span> → <span class="en">EC2 Instance Connect</span> → <span class="en">Connect</span> (טרמינל בדפדפן).</li>
+          <li><b>מתקינים <span class="en">Docker</span></b> ומפעילים:
+<pre><span class="k">sudo</span> dnf install -y docker
+<span class="k">sudo</span> systemctl enable --now docker</pre></li>
+          <li><b>מריצים את ה-<span class="en">image</span></b> שדחפנו ל-<span class="en">Docker Hub</span> במפגש 3:
+<pre><span class="k">sudo</span> docker run -d -p 8080:8080 <span class="o">&lt;user&gt;/tasks-api:1.0</span></pre></li>
+          <li><b>ניגשים מהדפדפן/מהמחשב</b> דרך ה-<span class="en">IP</span> הציבורי של השרת:
+<pre><span class="k">curl</span> <span class="o">http://&lt;public-ip&gt;:8080/health</span></pre></li>
+        </ol>
+        <div class="box note"><div class="bt">רגע של ניצחון</div>אותו <span class="en">image</span> בדיוק שרץ על המחשב שלכם — רץ עכשיו בענן, נגיש מכל מקום.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 16 · DIVIDER 4 -->
+  <section class="slide divider" data-topic="חלק 4 · Lambda">
+    <div class="s-wrap">
+      <div class="pnum">חלק 4</div>
+      <h2><span class="en">Lambda</span>: מחשוב <span class="en">serverless</span></h2>
+      <p>הקצה השני של ספקטרום המחשוב — קוד שרץ בלי שרת לנהל.</p>
+    </div>
+  </section>
+
+  <!-- 17 · WHAT IS LAMBDA -->
+  <section class="slide" data-topic="חלק 4 · Lambda">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>מה זה <span class="en">Lambda</span>?</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">מעלים פונקציה, ו-<span class="en">AWS</span> מריץ אותה כש"קורה משהו" (אירוע) — בלי שרת שאתם מתחזקים. משלמים רק על זמן הריצה בפועל.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">FaaS</span> מונחה‑אירועים: <span class="en">AWS</span> מקצה <span class="en">runtime</span> לבקשה, מריץ את ה-<span class="en">handler</span>, ומכבה. מתאים לעיבוד אסינכרוני וזרימות אירועים — בדיוק מה שנבנה במפגש 5 (<span class="en">SQS → Lambda</span>).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 18 · EC2 VS LAMBDA -->
+  <section class="slide" data-topic="חלק 4 · Lambda">
+    <div class="s-wrap">
+      <span class="kicker">מתי כל אחד</span>
+      <h2><span class="en">EC2</span> מול <span class="en">Lambda</span></h2>
+      <table>
+        <tr><th></th><th><span class="en">EC2</span></th><th><span class="en">Lambda</span></th></tr>
+        <tr><td>מודל</td><td>שרת שרץ תמיד</td><td>פונקציה לפי אירוע</td></tr>
+        <tr><td>ניהול</td><td>אתם (<span class="en">OS</span>, עדכונים)</td><td><span class="en">AWS</span> מנהל</td></tr>
+        <tr><td>תמחור</td><td>לפי זמן הדלקה</td><td>לפי קריאה/זמן ריצה</td></tr>
+        <tr><td>מתאים ל…</td><td>שירות רציף (ה-<span class="en">API</span>)</td><td>עיבוד אירועים קצר</td></tr>
+      </table>
+      <div class="box note"><div class="bt">בפרויקט שלנו</div>ה-<span class="en">Tasks API</span> רץ על <span class="en">EC2</span> (שירות רציף); <span class="en">Lambda</span> יעבד אירועי "נוצרה משימה" מהתור (מפגש 5).</div>
+    </div>
+  </section>
+
+  <!-- 19 · DEMO lambda -->
+  <section class="slide" data-topic="הדגמה · Lambda">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> פונקציית <span class="en">Lambda</span> ראשונה</div>
+        <ol class="steps">
+          <li><span class="en">Lambda</span> → <span class="en">Create function</span> → <span class="en">Author from scratch</span>; שם + <span class="en">Runtime: Java 17</span>.</li>
+          <li><b>מעלים</b> את ה-<span class="en">handler</span> המוכן מה-<span class="en">repo</span> (<code>lambda/</code>) — או מתחילים מדוגמה.</li>
+          <li><b>יוצרים <span class="en">Test event</span></b> פשוט ולוחצים <span class="en">Test</span>.</li>
+          <li><b>צופים בתוצאה ובלוגים</b> ב-<span class="en">CloudWatch</span> — הפונקציה רצה בלי שום שרת שהקמנו.</li>
+        </ol>
+        <div class="box note"><div class="bt">זו רק היכרות</div>במפגש 5 נחבר <span class="en">Lambda</span> אמיתי לתור <span class="en">SQS</span> שמקבל אירועים מה-<span class="en">API</span> — הצרכן בארכיטקטורה.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 20 · LAB -->
+  <section class="slide" data-topic="מעבדה">
+    <div class="s-wrap">
+      <div class="block lab">
+        <div class="hd"><span class="badge">מעבדה</span> בנו את שלב 4 — 25 דקות</div>
+        <ol class="steps">
+          <li><b>הגדירו <span class="en">Budget</span></b> + התראת אימייל.</li>
+          <li><b>ודאו <span class="en">MFA</span></b> ל-<span class="en">root</span> ו<b>צרו משתמש <span class="en">IAM</span></b> לעבודה.</li>
+          <li><b>הקימו <span class="en">EC2</span></b> (<span class="en">Amazon Linux 2023</span>, <span class="en">t3.micro</span>) עם <span class="en">SG</span> שפותח 22 ו-8080.</li>
+          <li><b>התחברו</b>, התקינו <span class="en">Docker</span>, והריצו את ה-<span class="en">image</span> שלכם מ-<span class="en">Docker Hub</span>.</li>
+          <li><b>גשו</b> ל-<code>http://&lt;public-ip&gt;:8080/health</code> מהדפדפן.</li>
+          <li><b>אתגר:</b> צרו פונקציית <span class="en">Lambda</span> והריצו <span class="en">Test event</span>.</li>
+        </ol>
+        <div class="box note" style="margin-top:6px"><div class="bt">סימן הצלחה</div>ה-<span class="en">API</span> עונה דרך ה-<span class="en">IP</span> הציבורי, וה-<span class="en">Lambda</span> מחזיר תוצאה ב-<span class="en">Test</span>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 21 · HW -->
+  <section class="slide" data-topic="משימת בית">
+    <div class="s-wrap">
+      <div class="block hw">
+        <div class="hd"><span class="badge">משימת בית</span> לפני מפגש 5</div>
+        <ol class="steps">
+          <li><b>כבו/מחקו את ה-<span class="en">EC2</span>!</b> (<span class="en">Stop</span> או <span class="en">Terminate</span>) — היגיינת עלויות. ודאו שאין משאבים שרצים לחינם.</li>
+          <li><b>תרגיל <span class="en">AWS CLI</span>:</b> התקינו והגדירו, ונסו <code>aws sts get-caller-identity</code> ו-<code>aws s3 ls</code>.</li>
+          <li><b>קריאה:</b> מהו מסד נתונים <span class="en">NoSQL</span> (<span class="en">DynamoDB</span>) — לקראת מפגש 5.</li>
+        </ol>
+        <div class="box warn" style="margin-top:6px"><div class="bt">חשוב</div>שרת <span class="en">EC2</span> שנשאר דולק צורך קרדיט. בדקו את ה-<span class="en">Budget</span> שיצרתם — הוא שם בדיוק בשביל זה.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 22 · RECAP + NEXT -->
+  <section class="slide" data-topic="סיכום">
+    <div class="s-wrap">
+      <span class="kicker">סיכום מפגש 4</span>
+      <h2>מה בנינו, ולאן ממשיכים</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3 style="margin-top:0">שלב 4 הושלם — <span class="en">Deploy</span> (יסודות)</h3>
+          <ul>
+            <li>הגנו על החשבון: <span class="en">Budgets</span>, <span class="en">IAM</span>, <span class="en">MFA</span>.</li>
+            <li>הרצנו את ה-<span class="en">image</span> על <span class="en">EC2</span> אמיתי בענן.</li>
+            <li>הכרנו <span class="en">Lambda</span> והרצנו פונקציה ראשונה.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">הבא — מפגש 5: נתונים ואירועים</h3>
+          <ul>
+            <li><span class="en">S3</span>, <span class="en">DynamoDB</span>, ו-<span class="en">SQS/SNS</span>.</li>
+            <li>נחבר <span class="en">API → SQS → Lambda → SNS</span> — ונתרגל הכול מקומית עם <span class="en">LocalStack</span>.</li>
+          </ul>
+          <div class="box warn" style="margin-top:6px"><div class="bt">לא לשכוח</div>לכבות את ה-<span class="en">EC2</span>, ולהגיע עם <span class="en">AWS CLI</span> מוגדר.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 23 · END -->
+  <section class="slide cover" data-topic="סוף">
+    <div class="s-wrap">
+      <div class="eyebrow">מפגש 4 הושלם · שלב <span class="en">Deploy</span> · 1</div>
+      <h1>שאלות?<br><span class="accent">נתראה במפגש 5 — נתונים ואירועים</span></h1>
+      <p class="sub">תזכורת: כבו את ה-<span class="en">EC2</span>, הגדירו <span class="en">AWS CLI</span>, ובדקו שה-<span class="en">Budget</span> פעיל.</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button id="prev" onclick="go(-1)">→ הקודם</button>
+  <div style="text-align:center"><div class="count" id="count">1 / 1</div><div class="hint">מקשים: ← הבא · → הקודם</div></div>
+  <button id="next" class="primary" onclick="go(1)">הבא ←</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const stage = document.getElementById('stage');
+  let i = 0;
+  function clamp(n){ return Math.max(0, Math.min(slides.length-1, n)); }
+  function fit(){
+    const wrap = slides[i] && slides[i].querySelector('.s-wrap');
+    if(!wrap) return;
+    wrap.style.transform='none';
+    const pad=22;
+    const availH = stage.clientHeight - pad*2;
+    const availW = stage.clientWidth - pad*2;
+    const h = wrap.offsetHeight, w = wrap.offsetWidth;
+    if(!h || !w) return;
+    const scale = Math.min(1, availH/h, availW/w);
+    wrap.style.transform = scale<0.999 ? 'scale('+scale.toFixed(4)+')' : 'none';
+  }
+  function render(){
+    slides.forEach((s,k)=> s.classList.toggle('active', k===i));
+    document.getElementById('count').textContent = (i+1)+' / '+slides.length;
+    document.getElementById('pbar').style.width = ((i+1)/slides.length*100)+'%';
+    document.getElementById('topic').textContent = 'מפגש 4 — ' + (slides[i].dataset.topic||'');
+    document.getElementById('prev').disabled = (i===0);
+    document.getElementById('next').disabled = (i===slides.length-1);
+    requestAnimationFrame(fit);
+    history.replaceState(null,'', '#'+(i+1));
+  }
+  function go(d){ i = clamp(i+d); render(); }
+  function jump(n){ i = clamp(n); render(); }
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowLeft' || e.key===' ' || e.key==='PageDown'){ e.preventDefault(); go(1); }
+    else if(e.key==='ArrowRight' || e.key==='PageUp'){ e.preventDefault(); go(-1); }
+    else if(e.key==='Home'){ jump(0); }
+    else if(e.key==='End'){ jump(slides.length-1); }
+  });
+  function toggleFs(){ if(!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); } else { document.exitFullscreen && document.exitFullscreen(); } }
+  window.addEventListener('resize', ()=>requestAnimationFrame(fit));
+  document.addEventListener('fullscreenchange', ()=>requestAnimationFrame(fit));
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>requestAnimationFrame(fit)); }
+  const start = parseInt((location.hash||'').replace('#',''),10);
+  if(!isNaN(start)) i = clamp(start-1);
+  render();
+</script>
+</body>
+</html>

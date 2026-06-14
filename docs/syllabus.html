@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>סילבוס · מקוד לענן — AWS · Docker · CI/CD · Observability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0f2e4d; --blue:#1F4E79; --blue2:#2E5496;
+    --accent:#ff9900;
+    --bg:#eef2f7; --card:#ffffff; --ink:#1a2330; --muted:#5b6776; --line:#dfe6ee;
+    --p-base:#64748b;     /* יסודות / Code */
+    --p-aws:#ff9900;      /* AWS */
+    --p-docker:#2496ed;   /* Docker */
+    --p-cicd:#7c3aed;     /* CI/CD */
+    --p-obs:#16a34a;      /* Observability */
+    --radius:16px;
+    --shadow:0 6px 24px rgba(15,46,77,.08);
+  }
+  *{box-sizing:border-box}
+  html{direction:rtl}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Heebo","Segoe UI","Arial",sans-serif;
+    font-size:17px; line-height:1.65; text-align:right; direction:rtl;
+  }
+  code,.en{direction:ltr; unicode-bidi:isolate;}
+  code{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace; font-size:.86em;
+       background:#eef3f9; color:#16324f; padding:.08em .42em; border-radius:6px; border:1px solid #dbe6f1;}
+  .wrap{max-width:1040px; margin:0 auto; padding:0 20px 80px;}
+  a{color:var(--blue2); text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* Banner */
+  header.hero{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 55%,var(--blue2) 100%);
+    color:#fff; padding:54px 0 40px; box-shadow:var(--shadow);
+  }
+  .hero .wrap{padding-bottom:0}
+  .eyebrow{font-size:14px; letter-spacing:.14em; text-transform:uppercase; opacity:.82; font-weight:600; margin:0 0 10px}
+  h1{font-size:40px; line-height:1.15; margin:0 0 12px; font-weight:800}
+  h1 .accent{color:var(--accent)}
+  .hero p.lead{font-size:19px; opacity:.94; margin:0 0 26px; max-width:760px}
+  .facts{display:flex; flex-wrap:wrap; gap:14px; margin-top:8px}
+  .fact{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22);
+        border-radius:12px; padding:12px 18px; backdrop-filter:blur(2px)}
+  .fact b{display:block; font-size:24px; font-weight:800; line-height:1}
+  .fact span{font-size:13px; opacity:.9}
+
+  section{margin-top:40px}
+  h2{font-size:27px; font-weight:800; color:var(--navy); margin:0 0 6px;
+     padding-right:14px; border-right:5px solid var(--accent)}
+  h2 .num{color:var(--muted); font-weight:600; font-size:18px}
+  .section-sub{color:var(--muted); margin:0 0 18px; padding-right:14px}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+        box-shadow:var(--shadow); padding:22px 24px}
+  .grid{display:grid; gap:16px}
+  .grid.two{grid-template-columns:1fr 1fr}
+  .grid.tools{grid-template-columns:repeat(3,1fr)}
+
+  ul.clean{margin:8px 0 0; padding-inline-start:22px}
+  ul.clean li{margin:6px 0}
+
+  /* chips / tags */
+  .chip{display:inline-flex; align-items:center; gap:7px; background:#f1f5fa; border:1px solid var(--line);
+        border-radius:999px; padding:7px 14px; font-size:14.5px; font-weight:500; margin:4px 6px 0 0}
+  .chip .dot{width:9px; height:9px; border-radius:50%}
+  .tag{display:inline-block; font-size:12.5px; font-weight:700; color:#fff; padding:3px 11px;
+       border-radius:999px; letter-spacing:.02em}
+  .t-base{background:var(--p-base)} .t-aws{background:var(--p-aws)} .t-docker{background:var(--p-docker)}
+  .t-cicd{background:var(--p-cicd)} .t-obs{background:var(--p-obs)}
+  .tag2{display:inline-block; font-size:12px; font-weight:600; color:var(--blue2); background:#eef3f9;
+        border:1px solid #d6e3f0; padding:3px 10px; border-radius:999px; margin-inline-start:6px}
+  .phase{display:inline-block; font-size:11.5px; font-weight:800; letter-spacing:.06em; color:#fff;
+        background:var(--navy); padding:3px 10px; border-radius:6px; margin-bottom:8px}
+  .phase .en{font-weight:800}
+
+  /* legend / lifecycle */
+  .legend{display:flex; flex-direction:column; gap:9px; margin-top:6px}
+  .legend .li{display:flex; align-items:center; gap:10px; font-size:15px}
+  .legend .sw{width:14px;height:14px;border-radius:4px; flex:0 0 auto}
+  .legend .ph{font-weight:700; color:var(--navy); min-width:118px; display:inline-block}
+  .legend .se{color:#9aa6b2; font-size:13.5px}
+
+  /* timeline (project arc) */
+  .timeline{position:relative; margin:8px 6px 0; padding-inline-start:30px}
+  .timeline::before{content:""; position:absolute; inset-inline-start:9px; top:6px; bottom:6px; width:3px;
+                    background:linear-gradient(var(--accent),var(--blue2))}
+  .step{position:relative; margin:0 0 16px}
+  .step::before{content:""; position:absolute; inset-inline-start:-26px; top:4px; width:15px; height:15px;
+                border-radius:50%; background:#fff; border:3px solid var(--blue2)}
+  .step b{color:var(--navy)}
+  .step .s-num{display:inline-block; min-width:1.6em; color:var(--accent); font-weight:800}
+
+  /* session cards */
+  .session{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+           box-shadow:var(--shadow); padding:0; overflow:hidden; margin-bottom:18px}
+  .session .head{display:flex; align-items:flex-start; gap:16px; padding:20px 22px 14px;
+                 border-bottom:1px solid var(--line)}
+  .session .badge{flex:0 0 auto; width:52px; height:52px; border-radius:14px; background:var(--navy);
+                  color:#fff; font-weight:800; font-size:22px; display:flex; align-items:center; justify-content:center}
+  .session .head .ttl{flex:1}
+  .session .head h3{margin:0 0 6px; font-size:21px; color:var(--navy); font-weight:800}
+  .session .body{padding:16px 22px 22px}
+  .session h4{margin:14px 0 6px; font-size:15px; font-weight:700; color:var(--blue2); letter-spacing:.01em}
+  .blocks{margin:8px 0 0; padding-inline-start:22px; list-style:disc}
+  .blocks li{margin:6px 0}
+  .lab,.hw{border-radius:12px; padding:12px 16px; margin-top:10px; font-size:15.5px}
+  .lab{background:#eaf6ec; border:1px solid #c9e8cf}
+  .lab b{color:#15803d}
+  .hw{background:#fff6e9; border:1px solid #ffe0b0}
+  .hw b{color:#b45309}
+
+  /* timebox template table */
+  table{width:100%; border-collapse:collapse; direction:rtl; background:#fff; border-radius:12px; overflow:hidden}
+  th,td{border:1px solid var(--line); padding:9px 13px; text-align:right; vertical-align:top}
+  th{background:var(--blue); color:#fff; font-weight:600}
+  tr:nth-child(even) td{background:#f4f8fc}
+  td.time{white-space:nowrap; font-weight:600; color:var(--blue2); direction:ltr; unicode-bidi:isolate; text-align:right}
+
+  .note{background:#f0f7ff; border:1px solid #cfe3fb; border-inline-start:5px solid var(--blue2);
+        border-radius:12px; padding:16px 18px}
+  .note .src{font-size:13px; color:var(--muted); margin-top:8px}
+
+  .next{display:grid; grid-template-columns:repeat(3,1fr); gap:14px}
+  .next .card h4{margin:0 0 6px; color:var(--navy)}
+
+  footer{margin-top:46px; padding-top:18px; border-top:2px solid var(--line); color:var(--muted); font-size:14px; text-align:center}
+
+  @media (max-width:720px){
+    h1{font-size:30px}
+    .grid.two,.grid.tools,.next{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">סילבוס קורס · גרסה <span class="en">2.0</span></p>
+    <h1>מקוד לענן<br><span class="accent">AWS · Docker · CI/CD · Observability</span></h1>
+    <p class="lead">קורס מעשי למתכנתים בתחילת הדרך: איך לוקחים אפליקציה פשוטה ב‑<span class="en">Java</span> ומביאים אותה לרוץ בענן — ארוזה, אוטומטית ומנוטרת. המפגשים מסודרים לפי מחזור החיים של תוכנה: <span class="en">Code → Build → Package → Deploy → Observe</span>.</p>
+    <div class="facts">
+      <div class="fact"><b>8</b><span>מפגשים</span></div>
+      <div class="fact"><b>32</b><span>שעות לימוד</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ABOUT + OUTCOMES -->
+  <section id="about">
+    <h2>על הקורס</h2>
+    <p class="section-sub">ממה מורכב הקורס ומה תדעו לעשות בסופו.</p>
+    <div class="grid two">
+      <div class="card">
+        <p style="margin-top:0">הקורס מיועד למי שכבר יודע לתכנת ב‑<span class="en">Java</span> ברמת השפה, ורוצה להבין איך תוכנה <em>באמת</em> מגיעה למשתמשים. נלך בדיוק לפי הדרך שקוד עובר במציאות — מכתיבה, דרך בנייה ובדיקות, אריזה ופריסה לענן, ועד ניטור — ונבנה פרויקט אחד שמתפתח שלב‑אחר‑שלב לאורך כל המסלול. אנחנו נמנעים בכוונה מ‑<span class="en">frameworks</span> כבדים — האפליקציה נשארת <span class="en">Java</span> נקי — כדי שכל תשומת הלב תהיה על עולם ה‑<span class="en">Cloud</span> וה‑<span class="en">DevOps</span>.</p>
+        <p style="margin-bottom:0">כל מפגש משלב תיאוריה קצרה, הדגמה חיה, ומעבדה מעשית שבה כל משתתף מתקדם בעצמו על הפרויקט המשותף.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0; color:var(--navy); font-size:17px">בסיום הקורס תדעו:</h4>
+        <ul class="clean">
+          <li>להבין כיצד תוכנה עוברת מהמחשב המקומי אל הענן (<span class="en">client‑server</span>, <span class="en">HTTP</span>).</li>
+          <li>לבנות צינור <span class="en">CI/CD</span> ב‑<span class="en">GitHub Actions</span> שבונה, בודק ומפרס אוטומטית.</li>
+          <li>לארוז אפליקציה ל‑<span class="en">Container</span> עם <span class="en">Docker</span> ולהריץ אותה בכל סביבה.</li>
+          <li>לעבוד עם שירותי הליבה של <span class="en">AWS</span> בצורה בטוחה ותקציבית (<span class="en">IAM, EC2, S3</span>, מסדי נתונים, <span class="en">Lambda</span>, <span class="en">SQS/SNS</span>).</li>
+          <li>להגדיר תשתית כקוד (<span class="en">Infrastructure as Code</span>) עם <span class="en">Terraform</span>.</li>
+          <li>להוסיף <span class="en">Observability</span> — <span class="en">Logs, Metrics, Traces</span> — ולאבחן תקלות.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- AUDIENCE + PREREQS -->
+  <section id="audience">
+    <h2>קהל יעד ודרישות קדם</h2>
+    <div class="grid two">
+      <div class="card">
+        <h4 style="margin-top:0; color:var(--navy); font-size:17px">למי הקורס מתאים</h4>
+        <ul class="clean">
+          <li>בוגרי כ‑3 חודשי לימוד <span class="en">Java</span> (השפה בלבד) ואלגוריתמים.</li>
+          <li>מי שמכיר משתנים, לולאות, מחלקות, מתודות ואוספים (<span class="en">collections</span>).</li>
+        </ul>
+        <h4 style="color:var(--navy); font-size:17px">מה <u>לא</u> צריך לדעת מראש</h4>
+        <p style="margin:6px 0 0">לא נדרש ידע קודם ב‑<span class="en">Web</span>, <span class="en">Cloud</span>, <span class="en">Linux</span>, רשתות או <span class="en">DevOps</span> — נבנה את כל הבסיס מאפס במפגש הראשון.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0; color:var(--navy); font-size:17px">כלים להתקנה (לפני מפגש 1)</h4>
+        <div>
+          <span class="chip"><span class="dot" style="background:var(--p-base)"></span><span class="en">JDK 17+</span></span>
+          <span class="chip"><span class="dot" style="background:var(--p-cicd)"></span><span class="en">Git + GitHub</span></span>
+          <span class="chip"><span class="dot" style="background:var(--p-docker)"></span><span class="en">Docker Desktop</span></span>
+          <span class="chip"><span class="dot" style="background:var(--p-aws)"></span><span class="en">AWS CLI v2</span></span>
+          <span class="chip"><span class="dot" style="background:var(--p-base)"></span><span class="en">VS Code / IntelliJ</span></span>
+          <span class="chip"><span class="dot" style="background:var(--p-aws)"></span>חשבון <span class="en">AWS</span> (<span class="en">Free Plan</span>)</span>
+          <span class="chip"><span class="dot" style="background:var(--p-aws)"></span><span class="en">LocalStack</span> (בהמשך)</span>
+          <span class="chip"><span class="dot" style="background:var(--p-aws)"></span><span class="en">Terraform</span> (בהמשך)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECT -->
+  <section id="project">
+    <h2>הפרויקט המעשי: <span class="en">Tasks API</span></h2>
+    <p class="section-sub">חוט שדרה אחד שמלווה את כל 8 המפגשים — נבנה לפי מחזור החיים, שלב‑אחר‑שלב.</p>
+    <div class="grid two">
+      <div class="card">
+        <p style="margin-top:0">נבנה <span class="en">Tasks API</span> — שירות <span class="en">HTTP</span> פשוט לניהול משימות, כתוב ב‑<span class="en">Java</span> נקי על בסיס <code>com.sun.net.httpserver.HttpServer</code> שמובנה ב‑<span class="en">JDK</span> (ללא <span class="en">framework</span>). נקודות הקצה: <code>GET /health</code>, <code>GET /tasks</code>, <code>POST /tasks</code>, <code>GET /tasks/{id}</code>.</p>
+        <p style="margin-bottom:0">נכתוב ונריץ מקומית, נקים <span class="en">CI</span> שבונה ובודק בכל שינוי, נארוז ל‑<span class="en">container</span>, נפרוס לענן, נוסיף נתונים ועיבוד מבוסס‑אירועים (<span class="en">SQS → Lambda → SNS</span>), נגדיר את התשתית כקוד (<span class="en">Terraform</span>), נאוטמט את הפריסה (<span class="en">CD</span>), ולבסוף נוסיף ניטור מלא — בדיוק כמו צוות אמיתי.</p>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0; color:var(--navy); font-size:17px">קשת ההתפתחות של הפרויקט</h4>
+        <div class="timeline">
+          <div class="step"><span class="s-num">1</span> <b><span class="en">Code</span></b> — כתיבה והרצה מקומית של ה‑<span class="en">Tasks API</span> (בניית <span class="en">JAR</span>).</div>
+          <div class="step"><span class="s-num">2</span> <b><span class="en">Build &amp; Test</span></b> — <span class="en">CI</span> בונה ומריץ בדיקות בכל <span class="en">push</span>.</div>
+          <div class="step"><span class="s-num">3</span> <b><span class="en">Package</span></b> — <span class="en">Dockerfile</span> ו‑<span class="en">docker‑compose</span>; דחיפה ל‑<span class="en">Docker Hub</span>.</div>
+          <div class="step"><span class="s-num">4</span> <b><span class="en">Deploy</span> · מחשוב</b> — הרצה על <span class="en">EC2</span> ופונקציית <span class="en">Lambda</span> ראשונה.</div>
+          <div class="step"><span class="s-num">5</span> <b><span class="en">Deploy</span> · נתונים ואירועים</b> — <span class="en">DynamoDB</span> + <span class="en">SQS → Lambda → SNS</span> (דרך <span class="en">LocalStack</span>).</div>
+          <div class="step"><span class="s-num">6</span> <b><span class="en">Deploy</span> · קונטיינר לענן</b> — <span class="en">multi‑stage</span>, <span class="en">ECR</span> ו‑<span class="en">Terraform</span> (<span class="en">IaC</span>).</div>
+          <div class="step"><span class="s-num">7</span> <b><span class="en">Deploy</span> · אוטומציה</b> — <span class="en">CD</span> + <span class="en">terraform apply</span> בתוך הצינור.</div>
+          <div class="step"><span class="s-num">8</span> <b><span class="en">Observe</span></b> — <span class="en">Logs, Metrics, Traces</span> על כל השרשרת + הדגמת קצה‑לקצה.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h4 style="margin-top:0; color:var(--navy); font-size:17px">מה הפרויקט יתרגל — כל הנושאים במקום אחד</h4>
+      <p style="margin:0 0 14px; color:var(--muted); font-size:14.5px">כל טכנולוגיה שנלמדת בקורס באה לידי ביטוי באותו פרויקט <span class="en">Tasks API</span>, כך שהתרגול הוא רציף ומצטבר.</p>
+      <div class="grid tools">
+        <div>
+          <div style="font-weight:700; color:var(--p-base); margin-bottom:6px">יסודות (<span class="en">Code</span>)</div>
+          <span class="chip">שירות <span class="en">HTTP</span> (<span class="en">HttpServer</span>)</span>
+          <span class="chip"><span class="en">Git / GitHub</span></span>
+          <span class="chip"><span class="en">JSON</span> + <code>curl</code></span>
+          <span class="chip"><span class="en">Linux / CLI</span></span>
+        </div>
+        <div>
+          <div style="font-weight:700; color:var(--p-cicd); margin-bottom:6px"><span class="en">CI/CD</span></div>
+          <span class="chip"><span class="en">GitHub Actions</span></span>
+          <span class="chip">בנייה + בדיקות</span>
+          <span class="chip"><span class="en">OIDC → IAM Role</span></span>
+          <span class="chip">דחיפה ל‑<span class="en">ECR</span> + פריסה</span>
+        </div>
+        <div>
+          <div style="font-weight:700; color:var(--p-docker); margin-bottom:6px"><span class="en">Docker</span></div>
+          <span class="chip"><span class="en">Dockerfile</span></span>
+          <span class="chip"><span class="en">multi‑stage build</span></span>
+          <span class="chip"><span class="en">docker‑compose</span></span>
+          <span class="chip"><span class="en">Docker Hub</span></span>
+        </div>
+        <div>
+          <div style="font-weight:700; color:var(--p-aws); margin-bottom:6px"><span class="en">AWS</span></div>
+          <span class="chip"><span class="en">IAM</span></span>
+          <span class="chip"><span class="en">EC2</span></span>
+          <span class="chip"><span class="en">S3</span></span>
+          <span class="chip"><span class="en">DynamoDB</span></span>
+          <span class="chip"><span class="en">Lambda</span></span>
+          <span class="chip"><span class="en">SQS</span></span>
+          <span class="chip"><span class="en">SNS</span></span>
+          <span class="chip"><span class="en">ECR</span></span>
+          <span class="chip"><span class="en">CloudWatch</span></span>
+          <span class="chip"><span class="en">X‑Ray</span></span>
+        </div>
+        <div>
+          <div style="font-weight:700; color:var(--blue2); margin-bottom:6px">תשתית כקוד (<span class="en">IaC</span>)</div>
+          <span class="chip"><span class="en">Terraform</span></span>
+          <span class="chip"><code>plan / apply / destroy</code></span>
+          <span class="chip">הקמת <span class="en">ECR + EC2 + SG</span></span>
+        </div>
+        <div>
+          <div style="font-weight:700; color:var(--p-obs); margin-bottom:6px"><span class="en">Observability</span></div>
+          <span class="chip"><span class="en">Logs</span> (<span class="en">CloudWatch</span>)</span>
+          <span class="chip"><span class="en">Metrics</span> + <span class="en">Alarms</span></span>
+          <span class="chip"><span class="en">Traces</span> (<span class="en">OpenTelemetry → X‑Ray</span>)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <h2>ארכיטקטורת הפרויקט — איך הכול מתחבר</h2>
+    <p class="section-sub">תרשים אחד שמראה איך כל נושא בקורס משתלב במערכת אחת חיה.</p>
+
+    <div class="card">
+      <div style="overflow-x:auto; direction:ltr; border:1px solid var(--line); border-radius:12px; background:#fff; padding:10px">
+        <svg viewBox="0 0 1000 700" width="100%" style="min-width:800px; height:auto; display:block; font-family:'Heebo','Segoe UI',Arial,sans-serif">
+          <defs>
+            <marker id="ah" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#334155"/>
+            </marker>
+            <marker id="ahp" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L8,3 L0,6 Z" fill="#7c3aed"/>
+            </marker>
+          </defs>
+
+          <!-- Dev strip -->
+          <rect x="28" y="46" width="150" height="66" rx="12" fill="#eef1f5" stroke="#64748b" stroke-width="2"/>
+          <text x="103" y="80" text-anchor="middle" font-size="17" font-weight="800" fill="#0f2e4d">Developer</text>
+          <text x="103" y="100" text-anchor="middle" font-size="13" fill="#5b6776">מפתח/ת · Java</text>
+          <line x1="178" y1="79" x2="210" y2="79" stroke="#334155" stroke-width="2.5" marker-end="url(#ah)"/>
+          <rect x="212" y="46" width="168" height="66" rx="12" fill="#eef1f5" stroke="#64748b" stroke-width="2"/>
+          <text x="296" y="76" text-anchor="middle" font-size="17" font-weight="800" fill="#0f2e4d">Git + GitHub</text>
+          <text x="296" y="96" text-anchor="middle" font-size="13" fill="#5b6776">commits · PRs</text>
+          <line x1="380" y1="79" x2="412" y2="79" stroke="#334155" stroke-width="2.5" marker-end="url(#ah)"/>
+          <rect x="414" y="34" width="322" height="92" rx="12" fill="#f1ebfb" stroke="#7c3aed" stroke-width="2"/>
+          <text x="575" y="60" text-anchor="middle" font-size="17" font-weight="800" fill="#5b21b6">GitHub Actions</text>
+          <text x="575" y="83" text-anchor="middle" font-size="13.5" fill="#3f2a63">CI · build · test · Docker image</text>
+          <text x="575" y="104" text-anchor="middle" font-size="13.5" fill="#3f2a63">CD · OIDC · ECR · Terraform · deploy</text>
+          <line x1="575" y1="126" x2="575" y2="196" stroke="#7c3aed" stroke-width="3" marker-end="url(#ahp)"/>
+          <text x="588" y="166" font-size="13" font-weight="700" fill="#7c3aed">deploy</text>
+
+          <!-- legend -->
+          <rect x="754" y="40" width="216" height="98" rx="10" fill="#f8fafc" stroke="#dfe6ee"/>
+          <text x="764" y="60" font-size="12.5" font-weight="800" fill="#0f2e4d">מקרא</text>
+          <line x1="764" y1="74" x2="792" y2="74" stroke="#334155" stroke-width="2.5" marker-end="url(#ah)"/>
+          <text x="798" y="78" font-size="11.5" fill="#5b6776">זרימת נתונים (runtime)</text>
+          <line x1="764" y1="95" x2="792" y2="95" stroke="#7c3aed" stroke-width="3" marker-end="url(#ahp)"/>
+          <text x="798" y="99" font-size="11.5" fill="#5b6776">פריסה (CD)</text>
+          <line x1="764" y1="116" x2="792" y2="116" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 4"/>
+          <text x="798" y="120" font-size="11.5" fill="#5b6776">הקמה / ניטור</text>
+
+          <!-- AWS cloud -->
+          <rect x="24" y="150" width="952" height="528" rx="18" fill="#fffaf2" stroke="#ff9900" stroke-width="2.5" stroke-dasharray="8 6"/>
+          <text x="46" y="178" font-size="16" font-weight="800" fill="#b45309">AWS Cloud · Region</text>
+
+          <!-- IAM + Terraform -->
+          <rect x="48" y="208" width="158" height="62" rx="12" fill="#fff3e0" stroke="#ff9900" stroke-width="2"/>
+          <text x="127" y="234" text-anchor="middle" font-size="16" font-weight="800" fill="#0f2e4d">IAM</text>
+          <text x="127" y="254" text-anchor="middle" font-size="12.5" fill="#5b6776">הרשאות · אבטחה</text>
+          <rect x="48" y="298" width="158" height="76" rx="12" fill="#e9eef7" stroke="#2E5496" stroke-width="2"/>
+          <text x="127" y="326" text-anchor="middle" font-size="15.5" font-weight="800" fill="#0f2e4d">Terraform</text>
+          <text x="127" y="348" text-anchor="middle" font-size="12.5" fill="#5b6776">תשתית כקוד (IaC)</text>
+          <line x1="206" y1="332" x2="404" y2="300" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+          <text x="244" y="312" font-size="11.5" fill="#7c8896">מקים משאבים</text>
+
+          <!-- ECR -->
+          <rect x="486" y="198" width="180" height="56" rx="12" fill="#fff3e0" stroke="#ff9900" stroke-width="2"/>
+          <text x="576" y="222" text-anchor="middle" font-size="15.5" font-weight="800" fill="#0f2e4d">Amazon ECR</text>
+          <text x="576" y="242" text-anchor="middle" font-size="12.5" fill="#5b6776">Docker image</text>
+          <line x1="576" y1="254" x2="576" y2="298" stroke="#334155" stroke-width="2.5" marker-end="url(#ah)"/>
+          <text x="586" y="282" font-size="11.5" fill="#5b6776">pull</text>
+
+          <!-- EC2 + Tasks API -->
+          <rect x="476" y="300" width="200" height="98" rx="12" fill="#e7f3fd" stroke="#2496ed" stroke-width="2"/>
+          <text x="576" y="324" text-anchor="middle" font-size="15.5" font-weight="800" fill="#0f2e4d">EC2 + Docker</text>
+          <rect x="496" y="336" width="160" height="48" rx="9" fill="#ffffff" stroke="#2496ed" stroke-width="1.5"/>
+          <text x="576" y="358" text-anchor="middle" font-size="13.5" font-weight="700" fill="#0f2e4d">Tasks API</text>
+          <text x="576" y="375" text-anchor="middle" font-size="11.5" fill="#5b6776">Java · HttpServer</text>
+
+          <!-- DynamoDB + S3 -->
+          <rect x="742" y="286" width="176" height="56" rx="12" fill="#fff3e0" stroke="#ff9900" stroke-width="2"/>
+          <text x="830" y="310" text-anchor="middle" font-size="15" font-weight="800" fill="#0f2e4d">DynamoDB</text>
+          <text x="830" y="329" text-anchor="middle" font-size="12.5" fill="#5b6776">אחסון משימות</text>
+          <rect x="742" y="356" width="176" height="50" rx="12" fill="#fff3e0" stroke="#ff9900" stroke-width="2"/>
+          <text x="830" y="378" text-anchor="middle" font-size="15" font-weight="800" fill="#0f2e4d">S3</text>
+          <text x="830" y="396" text-anchor="middle" font-size="12.5" fill="#5b6776">אובייקטים</text>
+          <line x1="676" y1="332" x2="740" y2="316" stroke="#334155" stroke-width="2.5" marker-end="url(#ah)"/>
+          <line x1="676" y1="362" x2="740" y2="384" stroke="#334155" stroke-width="2.5" marker-end="url(#ah)"/>
+          <text x="686" y="332" font-size="11" fill="#5b6776">read/write</text>
+
+          <!-- Event flow -->
+          <rect x="300" y="486" width="160" height="60" rx="12" fill="#fff3e0" stroke="#ff9900" stroke-width="2"/>
+          <text x="380" y="512" text-anchor="middle" font-size="15.5" font-weight="800" fill="#0f2e4d">SQS</text>
+          <text x="380" y="531" text-anchor="middle" font-size="12.5" fill="#5b6776">תור הודעות</text>
+          <rect x="520" y="486" width="160" height="60" rx="12" fill="#fff3e0" stroke="#ff9900" stroke-width="2"/>
+          <text x="600" y="512" text-anchor="middle" font-size="15.5" font-weight="800" fill="#0f2e4d">Lambda</text>
+          <text x="600" y="531" text-anchor="middle" font-size="12.5" fill="#5b6776">consumer</text>
+          <rect x="742" y="486" width="176" height="60" rx="12" fill="#fff3e0" stroke="#ff9900" stroke-width="2"/>
+          <text x="830" y="512" text-anchor="middle" font-size="15.5" font-weight="800" fill="#0f2e4d">SNS</text>
+          <text x="830" y="531" text-anchor="middle" font-size="12.5" fill="#5b6776">התראות</text>
+          <line x1="520" y1="394" x2="432" y2="484" stroke="#334155" stroke-width="2.5" marker-end="url(#ah)"/>
+          <text x="352" y="450" font-size="11" fill="#5b6776">POST → message</text>
+          <line x1="460" y1="516" x2="518" y2="516" stroke="#334155" stroke-width="2.5" marker-end="url(#ah)"/>
+          <line x1="680" y1="516" x2="740" y2="516" stroke="#334155" stroke-width="2.5" marker-end="url(#ah)"/>
+          <text x="690" y="508" font-size="11" fill="#5b6776">notify</text>
+
+          <!-- Observability band -->
+          <rect x="48" y="592" width="870" height="66" rx="12" fill="#e9f7ee" stroke="#16a34a" stroke-width="2"/>
+          <text x="68" y="618" font-size="14.5" font-weight="800" fill="#15803d">Observability</text>
+          <text x="200" y="618" font-size="13" fill="#14532d">CloudWatch · Logs · Metrics · Alarms</text>
+          <text x="68" y="642" font-size="13" fill="#14532d">X-Ray · Traces:  API → SQS → Lambda</text>
+          <text x="470" y="642" font-size="12" fill="#3f7a52">כל הרכיבים שולחים טלמטריה</text>
+          <line x1="380" y1="546" x2="380" y2="592" stroke="#16a34a" stroke-width="2" stroke-dasharray="5 4"/>
+          <line x1="600" y1="546" x2="600" y2="592" stroke="#16a34a" stroke-width="2" stroke-dasharray="5 4"/>
+          <line x1="830" y1="546" x2="830" y2="592" stroke="#16a34a" stroke-width="2" stroke-dasharray="5 4"/>
+        </svg>
+      </div>
+      <p style="margin:12px 2px 0; color:var(--ink); font-size:15px"><b>זרימה מקצה לקצה:</b> מפתח/ת דוחפ/ת קוד ל‑<span class="en">GitHub</span>; <span class="en">GitHub Actions</span> בונה ובודק (<span class="en">CI</span>), ובמיזוג ל‑<code>main</code> מתבצע אימות ל‑<span class="en">AWS</span> עם <span class="en">OIDC</span>, דחיפת <span class="en">image</span> ל‑<span class="en">ECR</span>, <code>terraform apply</code> ופריסה (<span class="en">CD</span>). בענן, ה‑<span class="en">Tasks API</span> רץ כקונטיינר על <span class="en">EC2</span>, שומר משימות ב‑<span class="en">DynamoDB</span>, ובכל יצירת משימה שולח הודעה ל‑<span class="en">SQS</span>; פונקציית <span class="en">Lambda</span> צורכת מהתור ומפרסמת התראה ב‑<span class="en">SNS</span>. <span class="en">IAM</span> שולט בהרשאות, <span class="en">Terraform</span> מקים את כל המשאבים, ו‑<span class="en">CloudWatch</span> + <span class="en">X‑Ray</span> מנטרים את הכול.</p>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h4 style="margin-top:0; color:var(--navy); font-size:17px">איזה נושא מפעיל איזה חלק במערכת</h4>
+      <table>
+        <tr><th>רכיב / נושא</th><th>התפקיד בפרויקט</th><th style="width:120px">נלמד במפגש</th></tr>
+        <tr><td><span class="en">Git + GitHub</span></td><td>ניהול קוד, היסטוריה ו‑<span class="en">Pull Requests</span> — המקור שממנו רץ ה‑<span class="en">CI/CD</span></td><td>1–2</td></tr>
+        <tr><td><span class="en">CI</span> (<span class="en">GitHub Actions</span>)</td><td>בונה את ה‑<span class="en">JAR</span>, מריץ בדיקות ובונה <span class="en">Docker image</span> בכל <span class="en">push</span></td><td>2</td></tr>
+        <tr><td><span class="en">Docker</span></td><td>אורז את ה‑<span class="en">Tasks API</span> ל‑<span class="en">image</span> שרץ זהה בכל סביבה</td><td>3</td></tr>
+        <tr><td><span class="en">EC2</span> + <span class="en">Lambda</span></td><td>מחשוב בענן: הקונטיינר רץ על <span class="en">EC2</span>; <span class="en">Lambda</span> מעבד אירועים</td><td>4</td></tr>
+        <tr><td><span class="en">DynamoDB</span> · <span class="en">S3</span> · <span class="en">SQS</span> · <span class="en">SNS</span></td><td>אחסון משימות ואובייקטים, ותור/התראות לארכיטקטורה מונחית‑אירועים</td><td>5</td></tr>
+        <tr><td><span class="en">ECR</span> + <span class="en">Terraform</span> (<span class="en">IaC</span>)</td><td><span class="en">registry</span> ל‑<span class="en">image</span>, והקמת כל משאבי ה‑<span class="en">AWS</span> כקוד</td><td>6</td></tr>
+        <tr><td><span class="en">CD</span> (<span class="en">GitHub Actions</span> + <span class="en">OIDC</span>)</td><td>פריסה אוטומטית: <span class="en">build → push ECR → terraform apply → deploy</span></td><td>7</td></tr>
+        <tr><td><span class="en">CloudWatch</span> · <span class="en">X‑Ray</span></td><td><span class="en">Logs</span>, <span class="en">Metrics</span>, <span class="en">Alarms</span> ו‑<span class="en">Traces</span> מקצה לקצה</td><td>8</td></tr>
+        <tr><td><span class="en">IAM</span></td><td>הרשאות ואבטחה לכל הרכיבים — חוצה את כל הקורס</td><td>4 ואילך</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- FORMAT + LIFECYCLE -->
+  <section id="format">
+    <h2>מבנה זמן ומסלול הקורס</h2>
+    <div class="grid two">
+      <div class="card">
+        <h4 style="margin-top:0; color:var(--navy); font-size:17px">מבנה זמן קבוע לכל מפגש (180 ד׳)</h4>
+        <table>
+          <tr><th style="width:130px">זמן</th><th>פעילות</th></tr>
+          <tr><td class="time">16:00–16:15</td><td>פתיחה, חזרה קצרה ויעדי המפגש</td></tr>
+          <tr><td class="time">16:15–17:30</td><td>בלוק תיאוריה + הדגמה חיה</td></tr>
+          <tr><td class="time">17:30–17:40</td><td>הפסקה</td></tr>
+          <tr><td class="time">17:40–18:30</td><td>בלוק שני + מעבדה מודרכת</td></tr>
+          <tr><td class="time">18:30–18:55</td><td>מעבדה עצמאית (יחיד / זוגות)</td></tr>
+          <tr><td class="time">18:55–19:00</td><td>סיכום ומשימת בית</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h4 style="margin-top:0; color:var(--navy); font-size:17px">מסלול הקורס — לפי מחזור החיים</h4>
+        <p style="margin:0 0 10px; color:var(--muted)">המפגשים מסודרים לפי הדרך שתוכנה עוברת — מקוד ועד ניטור.</p>
+        <div class="legend">
+          <div class="li"><span class="sw" style="background:var(--p-base)"></span><span class="ph"><span class="en">Code</span></span><span class="se">מפגש 1 · יסודות והאפליקציה</span></div>
+          <div class="li"><span class="sw" style="background:var(--p-cicd)"></span><span class="ph"><span class="en">Build &amp; Test</span></span><span class="se">מפגש 2 · <span class="en">CI</span></span></div>
+          <div class="li"><span class="sw" style="background:var(--p-docker)"></span><span class="ph"><span class="en">Package</span></span><span class="se">מפגש 3 · <span class="en">Docker</span></span></div>
+          <div class="li"><span class="sw" style="background:var(--p-aws)"></span><span class="ph"><span class="en">Deploy</span></span><span class="se">מפגשים 4–7 · <span class="en">AWS</span>, <span class="en">IaC</span>, <span class="en">CD</span></span></div>
+          <div class="li"><span class="sw" style="background:var(--p-obs)"></span><span class="ph"><span class="en">Observe</span></span><span class="se">מפגש 8 · <span class="en">Observability</span></span></div>
+        </div>
+        <p style="margin:14px 0 0; color:var(--muted); font-size:14.5px">שלב ה‑<span class="en">Deploy</span> הוא הרחב ביותר — הוא כולל את יסודות <span class="en">AWS</span>, נתונים ואירועים, תשתית כקוד ואוטומציית פריסה.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SESSIONS -->
+  <section id="sessions">
+    <h2>תכנית המפגשים</h2>
+    <p class="section-sub">8 מפגשים לפי מחזור החיים, כל אחד עם יעדים, תוכן, מעבדה ומשימת בית.</p>
+
+    <!-- S1 · CODE -->
+    <div class="session">
+      <div class="head">
+        <div class="badge" style="background:var(--p-base)">1</div>
+        <div class="ttl">
+          <span class="phase"><span class="en">Code</span></span>
+          <h3>יסודות והאפליקציה: <span class="en">HTTP</span>, <span class="en">Terminal</span>, <span class="en">Git</span> ו‑<span class="en">Cloud</span></h3>
+          <span class="tag t-base">יסודות</span>
+        </div>
+      </div>
+      <div class="body">
+        <h4>יעדי המפגש</h4>
+        <ul class="clean">
+          <li>להבין את מודל <span class="en">client‑server</span> ופרוטוקול <span class="en">HTTP</span> (בקשה/תגובה, מתודות, קודי סטטוס, פורטים, <span class="en">JSON</span>).</li>
+          <li>להכיר את שורת הפקודה (<span class="en">Terminal</span>) ופקודות <span class="en">Linux</span> בסיסיות.</li>
+          <li>לבצע צעדי <span class="en">Git</span> ראשונים (<span class="en">clone, commit, push</span>) ולקבל את קוד הפרויקט.</li>
+          <li>להבין מהו "ענן" ומהו <span class="en">DevOps</span>, ולהריץ את ה‑<span class="en">Tasks API</span> מקומית.</li>
+        </ul>
+        <h4>תוכן המפגש</h4>
+        <ul class="blocks">
+          <li><span>למה <span class="en">DevOps</span>? בעיית "אצלי זה עובד", מסירת קוד מ‑<span class="en">Dev</span> ל‑<span class="en">Ops</span>, ומחזור החיים <span class="en">Code → Observe</span>.</span></li>
+          <li><span><span class="en">HTTP</span> מהיסוד: בקשה/תגובה, <span class="en">GET/POST</span>, קודי סטטוס, פורטים, <span class="en">JSON</span> — הדגמה עם דפדפן ו‑<code>curl</code>.</span></li>
+          <li><span><span class="en">Terminal</span> ו‑<span class="en">Linux</span>: ניווט, קבצים, הרשאות, משתני סביבה, התקנת חבילות.</span></li>
+          <li><span><span class="en">Git</span> בסיסי: <span class="en">clone, commit, push</span> וקבלת ה‑<span class="en">starter repo</span>.</span></li>
+          <li><span>מהו הענן: <span class="en">IaaS / PaaS / SaaS</span>, <span class="en">Regions</span> ו‑<span class="en">Availability Zones</span>; סיור בקוד ה‑<span class="en">Tasks API</span>.</span></li>
+        </ul>
+        <div class="lab"><b>מעבדה:</b> <span class="en">clone</span> ל‑<span class="en">starter repo</span>, הידור והרצת ה‑<span class="en">Tasks API</span> מקומית, קריאה ל‑<code>/health</code> ול‑<code>/tasks</code> עם <code>curl</code> ודפדפן, ו‑<span class="en">commit + push</span> ראשון.</div>
+        <div class="hw"><b>משימת בית:</b> התקנת כל כלי הפיתוח; פתיחת חשבון <span class="en">AWS</span> (<span class="en">Free Plan</span>) כבר עכשיו — נשתמש בו ממפגש 4, וההפעלה עשויה לקחת זמן; קריאת דף עזר ל‑<span class="en">HTTP</span>.</div>
+      </div>
+    </div>
+
+    <!-- S2 · BUILD & TEST -->
+    <div class="session">
+      <div class="head">
+        <div class="badge" style="background:var(--p-cicd)">2</div>
+        <div class="ttl">
+          <span class="phase"><span class="en">Build &amp; Test</span></span>
+          <h3>אינטגרציה רציפה (<span class="en">CI</span>) עם <span class="en">GitHub Actions</span></h3>
+          <span class="tag t-cicd">CI/CD</span>
+        </div>
+      </div>
+      <div class="body">
+        <h4>יעדי המפגש</h4>
+        <ul class="clean">
+          <li>להבין מהו <span class="en">CI/CD</span> ולמה לאוטמט כבר מהיום הראשון.</li>
+          <li>לעבוד עם <span class="en">branches</span>, <span class="en">Pull Requests</span>, <span class="en">code review</span> ו‑<span class="en">status checks</span>.</li>
+          <li>להכיר את מבנה <span class="en">GitHub Actions</span> ולבנות <span class="en">pipeline</span> שבונה ובודק בכל <span class="en">push</span>.</li>
+        </ul>
+        <h4>תוכן המפגש</h4>
+        <ul class="blocks">
+          <li><span>רענון <span class="en">Git/GitHub</span>: <span class="en">branches</span>, <span class="en">Pull Requests</span> ו‑<span class="en">code review</span>.</span></li>
+          <li><span>מהו <span class="en">CI/CD</span> והמודל המנטלי של <span class="en">pipeline</span>; למה לאוטמט.</span></li>
+          <li><span>אנטומיה של <span class="en">GitHub Actions</span>: <span class="en">workflows, events, jobs, steps, runners, actions</span>, תחביר <span class="en">YAML</span>; <span class="en">caching</span> ו‑<span class="en">matrix</span> (בקצרה).</span></li>
+          <li><span>שלבי ה‑<span class="en">CI</span> שלנו: בניית ה‑<span class="en">JAR</span> (<span class="en">Maven</span>), בדיקות יחידה, <span class="en">lint</span>; <span class="en">secrets</span>, <span class="en">status checks</span> ו‑<span class="en">branch protection</span> על <span class="en">PR</span>.</span></li>
+        </ul>
+        <div class="lab"><b>מעבדה:</b> הוספת <code>.github/workflows/ci.yml</code> — התקנת <span class="en">JDK</span>, בניית הפרויקט עם <span class="en">Maven</span> והרצת בדיקות יחידה; צפייה ב‑<span class="en">pipeline</span> ירוק; הוספת <span class="en">required status check</span> על ה‑<span class="en">branch</span> והוספת בדיקה שנכשלת כדי לראות את ה‑<span class="en">CI</span> תופס.</div>
+        <div class="hw"><b>משימת בית:</b> הוספת בדיקת יחידה נוספת; הוספת <span class="en">build badge</span> ל‑<code>README</code>; קריאה על פירמידת הבדיקות.</div>
+      </div>
+    </div>
+
+    <!-- S3 · PACKAGE -->
+    <div class="session">
+      <div class="head">
+        <div class="badge" style="background:var(--p-docker)">3</div>
+        <div class="ttl">
+          <span class="phase"><span class="en">Package</span></span>
+          <h3>קונטיינריזציה עם <span class="en">Docker</span></h3>
+          <span class="tag t-docker">Docker</span><span class="tag2"><span class="en">Compose</span></span>
+        </div>
+      </div>
+      <div class="body">
+        <h4>יעדי המפגש</h4>
+        <ul class="clean">
+          <li>להסביר את ההבדל בין <span class="en">Container</span> ל‑<span class="en">VM</span> ולמה קונטיינרים פותרים את "אצלי זה עובד".</li>
+          <li>להבין <span class="en">images</span> מול <span class="en">containers</span>, שכבות (<span class="en">layers</span>) ו‑<span class="en">cache</span>.</li>
+          <li>לכתוב <span class="en">Dockerfile</span>, להריץ <span class="en">container</span> ולדחוף <span class="en">image</span> ל‑<span class="en">registry</span>.</li>
+          <li>להריץ מספר שירותים יחד עם <span class="en">docker‑compose</span>.</li>
+        </ul>
+        <h4>תוכן המפגש</h4>
+        <ul class="blocks">
+          <li><span>בעיית האריזה והתאימות; למה קונטיינרים; ארכיטקטורת <span class="en">Docker</span> (<span class="en">daemon</span>, <span class="en">registry</span>).</span></li>
+          <li><span><span class="en">images</span> מול <span class="en">containers</span>, שכבות ו‑<span class="en">build cache</span>.</span></li>
+          <li><span><span class="en">Dockerfile</span>: <code>FROM, COPY, RUN, EXPOSE, CMD/ENTRYPOINT</code>; הרצה עם <code>-p</code>/<code>-e</code>, <span class="en">logs</span>, <code>exec</code>, <span class="en">volumes</span>.</span></li>
+          <li><span><span class="en">docker‑compose</span>: הרצת כמה שירותים בפקודה אחת; דחיפה ל‑<span class="en">Docker Hub</span>; הרחבת ה‑<span class="en">CI</span> ממפגש 2 לבניית ה‑<span class="en">image</span>.</span></li>
+        </ul>
+        <div class="lab"><b>מעבדה:</b> כתיבת <span class="en">Dockerfile</span> ל‑<span class="en">Tasks API</span>; <span class="en">build</span> והרצה עם מיפוי פורטים; בדיקת <span class="en">logs</span>; <code>docker-compose up</code>; דחיפה ל‑<span class="en">Docker Hub</span>.</div>
+        <div class="hw"><b>משימת בית:</b> הקטנת ה‑<span class="en">image</span> (<span class="en">base image</span> רזה) והוספת <code>.dockerignore</code>. <span style="color:var(--muted)">(ה‑<span class="en">registry</span> של <span class="en">AWS</span> — <span class="en">ECR</span> — יגיע במפגש 6.)</span></div>
+      </div>
+    </div>
+
+    <!-- S4 · DEPLOY I -->
+    <div class="session">
+      <div class="head">
+        <div class="badge" style="background:var(--p-aws)">4</div>
+        <div class="ttl">
+          <span class="phase"><span class="en">Deploy</span> · 1</span>
+          <h3>יסודות <span class="en">AWS</span>: <span class="en">IAM</span>, עלויות, מחשוב (<span class="en">EC2 + Lambda</span>)</h3>
+          <span class="tag t-aws">AWS</span><span class="tag2"><span class="en">Lambda</span></span>
+        </div>
+      </div>
+      <div class="body">
+        <h4>יעדי המפגש</h4>
+        <ul class="clean">
+          <li>לנווט בקונסולת <span class="en">AWS</span> בבטחה ולהבין את מודל החיוב החדש (<span class="en">Free Plan</span>, קרדיט של <span class="en">$200</span> ל‑6 חודשים).</li>
+          <li>להגדיר בקרת עלויות (<span class="en">Budgets</span> והתראות) כדי לא "להישרף" בחיוב.</li>
+          <li>להבין <span class="en">IAM</span>: משתמשים, תפקידים (<span class="en">Roles</span>), הרשאות ועיקרון ההרשאה המינימלית.</li>
+          <li>להבין את ספקטרום המחשוב: <span class="en">EC2</span> (שרת מנוהל) מול <span class="en">Lambda</span> (<span class="en">serverless</span>), ולפרוס את האפליקציה לענן.</li>
+        </ul>
+        <h4>תוכן המפגש</h4>
+        <ul class="blocks">
+          <li><span>סיור בקונסולה + מודל החיוב החדש של <span class="en">AWS</span>; בקרת עלויות: <span class="en">Budgets</span>, התראות, תיוג.</span></li>
+          <li><span><span class="en">IAM</span>: <span class="en">Users / Groups / Roles / Policies</span>, מפתחות מול תפקידים, <span class="en">MFA</span>, הרשאה מינימלית; <span class="en">AWS CLI</span>.</span></li>
+          <li><span><span class="en">EC2</span>: מכונה וירטואלית, <span class="en">AMI</span>, סוגי <span class="en">instance</span>, <span class="en">key pairs</span>, <span class="en">Security Groups</span>.</span></li>
+          <li><span><span class="en">Lambda</span>: מחשוב <span class="en">serverless</span> (<span class="en">FaaS</span>), מודל מונחה‑אירועים, תמחור לפי שימוש; <span class="en">EC2</span> מול <span class="en">Lambda</span>.</span></li>
+        </ul>
+        <div class="lab"><b>מעבדה:</b> יצירת משתמש <span class="en">IAM</span> + התראת תקציב; הקמת <span class="en">EC2</span>, התחברות ב‑<span class="en">SSH</span> והרצת ה‑<span class="en">Tasks API</span> עם גישה דרך <span class="en">IP</span> ציבורי; פריסת פונקציית <span class="en">Lambda</span> ראשונה.</div>
+        <div class="hw"><b>משימת בית:</b> כיבוי/מחיקת ה‑<span class="en">instance</span> (היגיינת עלויות!), תרגיל קצר ב‑<span class="en">AWS CLI</span>, וקריאה: <span class="en">EC2</span> מול <span class="en">Lambda</span>.</div>
+      </div>
+    </div>
+
+    <!-- S5 · DEPLOY II -->
+    <div class="session">
+      <div class="head">
+        <div class="badge" style="background:var(--p-aws)">5</div>
+        <div class="ttl">
+          <span class="phase"><span class="en">Deploy</span> · 2</span>
+          <h3>נתונים ואירועים: <span class="en">S3</span>, <span class="en">DynamoDB</span>, <span class="en">SQS/SNS</span> ו‑<span class="en">LocalStack</span></h3>
+          <span class="tag t-aws">AWS</span><span class="tag2"><span class="en">SQS/SNS</span></span>
+        </div>
+      </div>
+      <div class="body">
+        <h4>יעדי המפגש</h4>
+        <ul class="clean">
+          <li>להבין אחסון אובייקטים (<span class="en">S3</span>) ומתי משתמשים בו.</li>
+          <li>להבחין בין מסד נתונים רלציוני (<span class="en">RDS</span>) ל‑<span class="en">NoSQL</span> (<span class="en">DynamoDB</span>) ולהכיר מושגי רשת בסיסיים.</li>
+          <li>להבין פירוק תלויות (<span class="en">decoupling</span>) עם תורים והודעות (<span class="en">SQS</span>, <span class="en">SNS</span>) וארכיטקטורה מונחית‑אירועים.</li>
+          <li>להשתמש ב‑<span class="en">LocalStack</span> כדי לתרגל שירותי <span class="en">AWS</span> מקומית וללא עלות.</li>
+        </ul>
+        <h4>תוכן המפגש</h4>
+        <ul class="blocks">
+          <li><span><span class="en">S3</span>: דליים (<span class="en">Buckets</span>), אובייקטים, עמידות (<span class="en">durability</span>), ושימושים נפוצים.</span></li>
+          <li><span>מסדי נתונים: <span class="en">RDS</span> מול <span class="en">DynamoDB</span> — מתי כל אחד; מידול בסיסי; רשת ב‑<span class="en">AWS</span> בקצרה (<span class="en">VPC, Subnets, Security Groups</span>).</span></li>
+          <li><span>הודעות ופירוק תלויות: <span class="en">SQS</span> (תור) ו‑<span class="en">SNS</span> (פרסום/הרשמה, <span class="en">fan‑out</span>); הארכיטקטורה מונחית‑האירועים: <span class="en">API → SQS → Lambda → SNS</span>.</span></li>
+          <li><span><span class="en">LocalStack</span>: הרצת שירותי <span class="en">AWS</span> מקומית ללא עלות (<span class="en">S3, DynamoDB, SQS, SNS, Lambda</span>).</span></li>
+        </ul>
+        <div class="lab"><b>מעבדה:</b> יצירת <span class="en">S3 bucket</span>; הרצת <span class="en">LocalStack</span>; טבלת <span class="en">DynamoDB</span> ושמירת משימות דרך ה‑<span class="en">AWS SDK for Java</span>; יצירת תור <span class="en">SQS</span> ונושא <span class="en">SNS</span>, חיווט <code>POST /tasks</code> ל‑<span class="en">SQS</span>, ופונקציית <span class="en">Lambda</span> שצורכת מהתור ומפרסמת ל‑<span class="en">SNS</span> — הכול מול <span class="en">LocalStack</span>.</div>
+        <div class="hw"><b>משימת בית:</b> קריאה על ארכיטקטורה מונחית‑אירועים ו‑<span class="en">idempotency</span>.</div>
+      </div>
+    </div>
+
+    <!-- S6 · DEPLOY III -->
+    <div class="session">
+      <div class="head">
+        <div class="badge" style="background:var(--p-aws)">6</div>
+        <div class="ttl">
+          <span class="phase"><span class="en">Deploy</span> · 3</span>
+          <h3>קונטיינר לענן + תשתית כקוד (<span class="en">ECR + Terraform</span>)</h3>
+          <span class="tag t-docker">Docker</span> <span class="tag t-aws" style="margin-inline-start:6px">AWS</span><span class="tag2"><span class="en">IaC</span></span>
+        </div>
+      </div>
+      <div class="body">
+        <h4>יעדי המפגש</h4>
+        <ul class="clean">
+          <li>לבנות <span class="en">image</span> בסגנון <span class="en">production</span> עם <span class="en">multi‑stage build</span> ולדחוף ל‑<span class="en">Amazon ECR</span>.</li>
+          <li>להבין תשתית כקוד (<span class="en">Infrastructure as Code</span>) ולמה היא מחליפה הקלקות בקונסולה.</li>
+          <li>להקים משאבי <span class="en">AWS</span> עם <span class="en">Terraform</span> (<code>init / plan / apply / destroy</code>).</li>
+          <li>לפרוס ולהריץ את הקונטיינר על תשתית שהוקמה כקוד.</li>
+        </ul>
+        <h4>תוכן המפגש</h4>
+        <ul class="blocks">
+          <li><span><span class="en">multi‑stage builds</span> (בנייה עם <span class="en">JDK+Maven</span>, ריצה על <span class="en">JRE</span> רזה) — גודל ואבטחה.</span></li>
+          <li><span><span class="en">Amazon ECR</span>: <span class="en">registry</span> פרטי — <span class="en">login</span>, <span class="en">tag</span>, <span class="en">push</span>.</span></li>
+          <li><span><span class="en">Infrastructure as Code</span>: <span class="en">declarative</span> מול <span class="en">imperative</span>, <span class="en">idempotency</span>, <span class="en">state</span>; <span class="en">Terraform</span>: <span class="en">providers, resources, variables</span>; <code>init / plan / apply / destroy</code> (<span class="en">CloudFormation</span>/<span class="en">CDK</span> כחלופות).</span></li>
+          <li><span>הרצת הקונטיינר בענן: <span class="en">EC2 + Docker</span> (מסלול חסכוני) מול <span class="en">ECS Fargate</span> (מנוהל) — נפרוס על <span class="en">EC2</span> שהוקם ב‑<span class="en">Terraform</span>.</span></li>
+        </ul>
+        <div class="lab"><b>מעבדה:</b> <span class="en">multi‑stage build</span> ויצירת <span class="en">ECR repo</span>; כתיבת <span class="en">Terraform</span> שמקים <span class="en">ECR + EC2 + Security Group</span> (<code>terraform apply</code>); דחיפת ה‑<span class="en">image</span>, משיכה והרצה על השרת שהוקם, ואימות; <code>terraform destroy</code> בסוף.</div>
+        <div class="hw"><b>משימת בית:</b> פרמטריזציה של ה‑<span class="en">Terraform</span> עם <span class="en">variables</span>; קריאה על <span class="en">terraform state</span> ו‑<span class="en">remote backends</span>.</div>
+      </div>
+    </div>
+
+    <!-- S7 · DEPLOY IV (CD) -->
+    <div class="session">
+      <div class="head">
+        <div class="badge" style="background:var(--p-cicd)">7</div>
+        <div class="ttl">
+          <span class="phase"><span class="en">Deploy</span> · 4</span>
+          <h3>אספקה רציפה (<span class="en">CD</span>): פריסה אוטומטית ל‑<span class="en">AWS</span></h3>
+          <span class="tag t-cicd">CI/CD</span> <span class="tag t-aws" style="margin-inline-start:6px">AWS</span><span class="tag2"><span class="en">IaC</span></span>
+        </div>
+      </div>
+      <div class="body">
+        <h4>יעדי המפגש</h4>
+        <ul class="clean">
+          <li>להרחיב את ה‑<span class="en">pipeline</span> ממפגש 2 לבנייה, דחיפה ופריסה אוטומטית.</li>
+          <li>לנהל סודות בבטחה (<span class="en">GitHub OIDC</span> מול <span class="en">IAM Role</span> במקום מפתחות קבועים).</li>
+          <li>להריץ <span class="en">Terraform</span> בתוך הצינור ולהוסיף שער אישור ידני ל‑<span class="en">production</span>.</li>
+        </ul>
+        <h4>תוכן המפגש</h4>
+        <ul class="blocks">
+          <li><span>מושגי <span class="en">CD</span>: <span class="en">environments</span>, <span class="en">promotion</span>, <span class="en">approvals</span>, <span class="en">rollback</span> (ברמת מושג).</span></li>
+          <li><span>אימות מול <span class="en">AWS</span> מתוך <span class="en">Actions</span>: <span class="en">GitHub OIDC</span> ↔ <span class="en">IAM Role</span> (ללא מפתחות ארוכי‑טווח) מול <span class="en">repo secrets</span>.</span></li>
+          <li><span>צינור פריסה מלא: בניית <span class="en">image</span> → דחיפה ל‑<span class="en">ECR</span> → <code>terraform apply</code> בתוך ה‑<span class="en">pipeline</span> → <span class="en">deploy</span>; <span class="en">smoke tests</span> אחרי פריסה.</span></li>
+        </ul>
+        <div class="lab"><b>מעבדה:</b> הרחבת ה‑<span class="en">pipeline</span> — <span class="en">push</span> ל‑<code>main</code> בונה ודוחף <span class="en">image</span> ל‑<span class="en">ECR</span>, מריץ <code>terraform apply</code>/<span class="en">deploy</span> לעדכון הקונטיינר ב‑<span class="en">EC2</span>, ומריץ <span class="en">smoke‑test</span> ל‑<code>/health</code>; הוספת <span class="en">environment</span> עם אישור נדרש.</div>
+        <div class="hw"><b>משימת בית:</b> הפעלת פריסה דרך מיזוג <span class="en">PR</span>; תיעוד ה‑<span class="en">pipeline</span> וה‑<span class="en">IaC</span> ב‑<code>README</code>.</div>
+      </div>
+    </div>
+
+    <!-- S8 · OBSERVE -->
+    <div class="session">
+      <div class="head">
+        <div class="badge" style="background:var(--p-obs)">8</div>
+        <div class="ttl">
+          <span class="phase"><span class="en">Observe</span></span>
+          <h3><span class="en">Observability</span>: <span class="en">Logs, Metrics, Traces</span> + <span class="en">Capstone</span></h3>
+          <span class="tag t-obs">Observability</span>
+        </div>
+      </div>
+      <div class="body">
+        <h4>יעדי המפגש</h4>
+        <ul class="clean">
+          <li>להבין את שלושת עמודי ה‑<span class="en">Observability</span> ואת ההבדל מ‑<span class="en">monitoring</span>.</li>
+          <li>לשלוח <span class="en">logs</span> ל‑<span class="en">CloudWatch</span> ולתשאל אותם.</li>
+          <li>ליצור <span class="en">metric</span>, <span class="en">dashboard</span> ו‑<span class="en">alarm</span>.</li>
+          <li>להוסיף <span class="en">trace</span> ולקרוא אותו לאורך השרשרת מונחית‑האירועים (<span class="en">OpenTelemetry → X‑Ray</span>).</li>
+        </ul>
+        <h4>תוכן המפגש</h4>
+        <ul class="blocks">
+          <li><span>למה <span class="en">Observability</span>; <span class="en">monitoring</span> מול <span class="en">observability</span>; שלושת העמודים: <span class="en">Logs, Metrics, Traces</span>.</span></li>
+          <li><span><span class="en">Logs</span>: לוגים מובנים (<span class="en">JSON</span>), <span class="en">CloudWatch Logs</span>, <span class="en">log groups/streams</span>, ותשאול עם <span class="en">Logs Insights</span>.</span></li>
+          <li><span><span class="en">Metrics</span>: <span class="en">CloudWatch metrics</span>, <span class="en">dashboards</span> ו‑<span class="en">alarms</span>; <span class="en">metric</span> מותאם; רעיונות <span class="en">RED/USE</span> (בקצרה).</span></li>
+          <li><span><span class="en">Traces</span>: <span class="en">tracing</span> מבוזר, <span class="en">spans</span>, <span class="en">OpenTelemetry auto‑instrumentation</span> (<code>-javaagent</code>) → <span class="en">AWS X‑Ray</span>; קריאת <span class="en">trace</span> לאורך <span class="en">API → SQS → Lambda</span>.</span></li>
+        </ul>
+        <div class="lab"><b>מעבדה + <span class="en">Capstone</span>:</b> שליחת <span class="en">logs</span> ל‑<span class="en">CloudWatch</span>; <span class="en">dashboard</span> + <span class="en">alarm</span> על שגיאות/<span class="en">latency</span>; חיבור <span class="en">OTel Java agent</span> וצפייה ב‑<span class="en">trace</span> דרך <span class="en">API → SQS → Lambda</span> ב‑<span class="en">X‑Ray</span>. סיום בריצה מלאה: <span class="en">push</span> → <span class="en">CI/CD</span> מפרס → תעבורה → <span class="en">logs</span>, <span class="en">metric+alarm</span> ו‑<span class="en">trace</span>.</div>
+        <div class="hw"><b>סיכום:</b> צ׳קליסט ניקוי עלויות (<code>terraform destroy</code> וכו׳); לאן ממשיכים מכאן.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ASSESSMENT -->
+  <section id="assessment">
+    <h2>הערכה והשתתפות</h2>
+    <div class="card">
+      <p style="margin-top:0">ההערכה מבוססת על התקדמות מעשית, לא על מבחנים:</p>
+      <ul class="clean">
+        <li><b>השתתפות במעבדות</b> — השלמת המעבדה בכל מפגש.</li>
+        <li><b>התקדמות הפרויקט</b> — כל שלב בקשת ההתפתחות נבנה על קודמו.</li>
+        <li><b>הדגמת <span class="en">Capstone</span></b> — הצגת השירות רץ בענן עם <span class="en">CI/CD</span> וניטור פעיל במפגש האחרון.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- COST NOTE -->
+  <section id="cost">
+    <h2>הערה חשובה על עלויות <span class="en">AWS</span></h2>
+    <div class="note">
+      <p style="margin-top:0">מאז יולי 2025 חשבונות <span class="en">AWS</span> חדשים עובדים במודל חדש: <b><span class="en">Free Plan</span></b> עם קרדיט של עד <span class="en">$200</span> שתוקפו <b>6 חודשים</b> (או עד שהקרדיט נגמר — המוקדם מביניהם), במקום מסלול 12 החודשים הישן. קיימים עדיין <b>למעלה מ‑30 שירותים תמיד‑חינמיים</b>. לכן בקורס אנחנו:</p>
+      <ul class="clean">
+        <li>מגדירים <span class="en">Budgets</span> והתראות חיוב כבר במפגש 4.</li>
+        <li>משתמשים ב‑<span class="en">LocalStack</span> לשירותים שעלולים לצרוך קרדיט (כמו <span class="en">DynamoDB, SQS, SNS, Lambda</span> בפיתוח), ושומרים את ה‑<span class="en">AWS</span> האמיתי לחוויית הפריסה המרכזית — שילוב של "אמיתי" + "מקומי".</li>
+        <li>משתמשים ב‑<code>terraform destroy</code> ומכבים/מוחקים משאבים בסוף כל מפגש (היגיינת עלויות).</li>
+      </ul>
+      <p class="src">מקור: <bdi><a href="https://aws.amazon.com/about-aws/whats-new/2025/07/aws-free-tier-credits-month-free-plan/">AWS — Free Tier now offers $200 in credits and a 6‑month free plan</a></bdi></p>
+    </div>
+  </section>
+
+  <footer>
+  </footer>
+
+</div>
+</body>
+</html>

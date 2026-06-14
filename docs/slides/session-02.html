@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מפגש 2 · Build &amp; Test — CI עם GitHub Actions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0f2e4d; --blue:#1F4E79; --blue2:#2E5496; --accent:#ff9900;
+    --bg:#0f1722; --stage:#eef2f7; --card:#ffffff; --ink:#1a2330; --muted:#5b6776; --line:#dfe6ee;
+    --simple:#0ea5b7; --tech:#6366f1; --demo:#16a34a; --lab:#ff9900; --hw:#7c3aed;
+    --code-bg:#0b2233; --code-ink:#e6f0fa;
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  html{direction:rtl}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); overflow:hidden;
+    font-family:"Heebo","Segoe UI","Arial",sans-serif; direction:rtl; text-align:right;
+  }
+  code,.en,kbd{direction:ltr; unicode-bidi:isolate;}
+  code{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace; font-size:.85em;
+       background:#eef3f9; color:#16324f; padding:.06em .42em; border-radius:6px; border:1px solid #dbe6f1;}
+  kbd{font-family:"JetBrains Mono",monospace; font-size:.8em; background:#1f2937; color:#e5e7eb;
+      border:1px solid #374151; border-bottom-width:2px; border-radius:6px; padding:1px 7px}
+
+  /* chrome */
+  .topbar{position:fixed; top:0; inset-inline:0; height:50px; z-index:30;
+    background:linear-gradient(90deg,var(--navy),var(--blue2)); color:#fff;
+    display:flex; align-items:center; gap:14px; padding:0 18px; box-shadow:0 2px 10px rgba(0,0,0,.25)}
+  .topbar .brand{font-weight:800; font-size:15px}
+  .topbar .sep{opacity:.5}
+  .topbar .topic{font-size:14px; opacity:.92; font-weight:500}
+  .topbar .spacer{flex:1}
+  .topbar button{background:rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.25);
+    border-radius:8px; padding:5px 10px; font-size:13px; cursor:pointer; font-family:inherit}
+  .topbar button:hover{background:rgba(255,255,255,.26)}
+  .pbar{position:fixed; top:50px; inset-inline:0; height:4px; background:#cdd7e2; z-index:30}
+  .pbar > i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent),#ffc46b); transition:width .25s}
+
+  .stage{position:fixed; top:54px; bottom:58px; inset-inline:0; overflow:hidden; background:var(--stage)}
+  .navbar{position:fixed; bottom:0; inset-inline:0; height:58px; z-index:30; background:#fff;
+    border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 18px}
+  .navbar .count{font-weight:700; color:var(--muted); font-size:14px; direction:ltr; unicode-bidi:isolate}
+  .navbar .hint{font-size:12.5px; color:#9aa6b2}
+  .navbar button{font-family:inherit; cursor:pointer; border-radius:10px; padding:9px 18px; font-size:15px; font-weight:700;
+    border:1px solid var(--line); background:#fff; color:var(--navy)}
+  .navbar button.primary{background:var(--navy); color:#fff; border-color:var(--navy)}
+  .navbar button:disabled{opacity:.4; cursor:default}
+
+  /* slides */
+  .slide{display:none; position:absolute; inset:0; padding:18px 22px}
+  .slide.active{display:flex; align-items:center; justify-content:center; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+  .s-wrap{max-width:1000px; width:100%; margin:0 auto; transform-origin:center center}
+  .kicker{display:inline-block; font-size:13px; font-weight:700; color:var(--accent);
+    text-transform:uppercase; letter-spacing:.12em; margin-bottom:8px}
+  .slide h2{font-size:30px; font-weight:800; color:var(--navy); margin:0 0 14px; line-height:1.2}
+  .slide h3{font-size:20px; font-weight:800; color:var(--blue2); margin:18px 0 8px}
+  .slide p{font-size:17.5px; line-height:1.6; margin:0 0 12px}
+  .slide ul,.slide ol{font-size:17px; line-height:1.6; margin:8px 0; padding-inline-start:24px}
+  .slide li{margin:7px 0}
+  .lead{font-size:19px; color:#33414f}
+  .muted{color:var(--muted)}
+
+  /* cover + divider */
+  .cover{background:radial-gradient(1200px 500px at 80% -10%,#1c476f 0,transparent 60%),linear-gradient(135deg,var(--navy),var(--blue) 70%); color:#fff}
+  .cover .eyebrow{font-size:15px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; font-weight:700}
+  .cover h1{font-size:46px; line-height:1.12; margin:10px 0 8px; font-weight:900}
+  .cover h1 .accent{color:var(--accent)}
+  .cover .sub{font-size:20px; opacity:.95; max-width:760px}
+  .cover .pills{margin-top:22px; display:flex; flex-wrap:wrap; gap:10px}
+  .cover .pill{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:8px 16px; font-size:14.5px}
+  .divider{background:linear-gradient(135deg,#13243a,#22507e); color:#fff}
+  .divider .pnum{font-size:18px; font-weight:700; color:var(--accent); letter-spacing:.1em}
+  .divider h2{color:#fff; font-size:40px; margin:6px 0 10px}
+  .divider p{font-size:19px; opacity:.92; max-width:720px}
+
+  /* cards / boxes */
+  .grid{display:grid; gap:16px}
+  .two{grid-template-columns:1fr 1fr}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; box-shadow:0 4px 16px rgba(15,46,77,.06)}
+  .box{border-radius:14px; padding:16px 18px; border:1px solid var(--line)}
+  .box .bt{font-weight:800; font-size:14px; margin-bottom:8px; display:flex; align-items:center; gap:8px}
+  .box .bt::before{content:""; width:10px; height:10px; border-radius:50%}
+  .box.simple{background:#e7f8fb; border-color:#bde9f0}
+  .box.simple .bt{color:#0b7c8c} .box.simple .bt::before{background:var(--simple)}
+  .box.tech{background:#eef0fe; border-color:#d3d8fb}
+  .box.tech .bt{color:#4348c7} .box.tech .bt::before{background:var(--tech)}
+  .box.note{background:#f0f7ff; border-color:#cfe3fb}
+  .box.note .bt{color:var(--blue2)} .box.note .bt::before{background:var(--blue2)}
+  .box.warn{background:#fff4ed; border-color:#ffd9bf}
+  .box.warn .bt{color:#c2410c} .box.warn .bt::before{background:#ea580c}
+
+  /* demo / lab / hw */
+  .block{border-radius:var(--radius); padding:18px 20px; border:1px solid var(--line); background:#fff}
+  .block > .hd{display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; margin-bottom:6px}
+  .block .badge{font-size:12px; font-weight:800; color:#fff; padding:3px 10px; border-radius:999px}
+  .block.demo{border-inline-start:6px solid var(--demo); background:#f1faf3}
+  .block.demo .badge{background:var(--demo)} .block.demo .hd{color:#15803d}
+  .block.lab{border-inline-start:6px solid var(--lab); background:#fff8ee}
+  .block.lab .badge{background:var(--lab)} .block.lab .hd{color:#b45309}
+  .block.hw{border-inline-start:6px solid var(--hw); background:#f6f1fe}
+  .block.hw .badge{background:var(--hw)} .block.hw .hd{color:#6b21a8}
+  .steps{counter-reset:st; list-style:none; padding:0; margin:8px 0 0}
+  .steps > li{position:relative; padding:4px 40px 14px 0; margin:0}
+  .steps > li::before{counter-increment:st; content:counter(st); position:absolute; inset-inline-start:0; top:0;
+    width:28px; height:28px; border-radius:50%; background:var(--navy); color:#fff; font-weight:800; font-size:14px;
+    display:flex; align-items:center; justify-content:center}
+  .block.demo .steps>li::before{background:var(--demo)} .block.lab .steps>li::before{background:var(--lab)}
+  .block.hw .steps>li::before{background:var(--hw)}
+  .steps > li:not(:last-child){border-inline-start:2px dashed #d7dee7; margin-inline-start:13px}
+  .steps b{color:var(--navy)}
+
+  /* code */
+  pre{direction:ltr; text-align:left; background:var(--code-bg); color:var(--code-ink); border-radius:12px;
+    padding:14px 16px; overflow-x:auto; font-family:"JetBrains Mono",monospace; font-size:14px; line-height:1.55; margin:10px 0;
+    border:1px solid #143049}
+  pre .c{color:#7fa7c7}
+  pre .k{color:#ffb86c}
+  pre .s{color:#a5e6a5}
+  pre .o{color:#9fd0ff}
+  .filename{direction:ltr; text-align:left; font-family:"JetBrains Mono",monospace; font-size:12px; color:#9fb6cb;
+    background:#0b2233; border:1px solid #143049; border-bottom:0; border-radius:10px 10px 0 0; padding:6px 12px; margin:10px 0 -10px; display:inline-block}
+
+  /* tables */
+  table{width:100%; border-collapse:collapse; direction:rtl; background:#fff; border-radius:12px; overflow:hidden; margin:10px 0; font-size:16px}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:right; vertical-align:top}
+  th{background:var(--blue); color:#fff; font-weight:700}
+  tr:nth-child(even) td{background:#f4f8fc}
+  .agenda td.t{white-space:nowrap; font-weight:700; color:var(--blue2); direction:ltr; unicode-bidi:isolate; text-align:right; width:130px}
+
+  /* flow */
+  .flow{display:flex; flex-wrap:wrap; align-items:center; gap:8px; direction:ltr; justify-content:center; margin:14px 0}
+  .flow .n{background:#fff; border:2px solid var(--blue2); color:var(--navy); border-radius:10px; padding:8px 14px; font-weight:700; font-size:15px}
+  .flow .a{color:var(--accent); font-weight:800; font-size:20px}
+
+  /* build map */
+  .buildmap{position:relative; display:flex; justify-content:space-between; direction:rtl; margin:18px 6px 8px}
+  .buildmap::before{content:""; position:absolute; top:21px; inset-inline:24px; height:3px; background:#cdd7e2}
+  .bm{position:relative; width:12%; text-align:center}
+  .bm .dot{width:44px; height:44px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:16px; border:3px solid #cdd7e2; background:#fff; color:#9aa6b2}
+  .bm .lab2{font-size:12px; margin-top:7px; color:#9aa6b2; font-weight:700; line-height:1.2}
+  .bm.done .dot{background:#16a34a; border-color:#16a34a; color:#fff}
+  .bm.done .lab2{color:#15803d}
+  .bm.now .dot{background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 0 5px rgba(255,153,0,.22)}
+  .bm.now .lab2{color:var(--navy)}
+
+  @media (max-width:760px){ .two{grid-template-columns:1fr} .cover h1{font-size:34px} .slide h2{font-size:24px} }
+  @media print{
+    body{overflow:visible}
+    .topbar,.navbar,.pbar{display:none}
+    .stage{position:static; overflow:visible; top:0; bottom:0}
+    .slide{position:static !important; display:block !important; min-height:auto; page-break-after:always; padding:0 0 24px; border-bottom:2px solid #ccc}
+    .s-wrap{transform:none !important}
+    .cover,.divider{color:#000; background:#fff !important}
+    .cover h1,.divider h2{color:var(--navy)}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">מקוד לענן</span><span class="sep">·</span>
+  <span class="topic" id="topic">מפגש 2 — Build &amp; Test</span>
+  <span class="spacer"></span>
+  <button onclick="toggleFs()">מסך מלא</button>
+</div>
+<div class="pbar"><i id="pbar"></i></div>
+
+<div class="stage" id="stage">
+
+  <!-- 1 · COVER -->
+  <section class="slide cover" data-topic="פתיחה">
+    <div class="s-wrap">
+      <div class="eyebrow">מפגש 2 מתוך 8 · שלב <span class="en">Build &amp; Test</span></div>
+      <h1>אינטגרציה רציפה<br><span class="accent">CI עם GitHub Actions</span></h1>
+      <p class="sub">לקחנו את הקוד ממפגש 1 — היום נגרום לו <b>להיבנות ולהיבדק אוטומטית</b> בכל <span class="en">push</span>. זה השלב שבו מפסיקים לסמוך על "בדקתי אצלי".</p>
+      <div class="pills">
+        <span class="pill">16:00–19:00</span>
+        <span class="pill"><span class="en">CI/CD</span></span>
+        <span class="pill"><span class="en">Branches</span> · <span class="en">PRs</span></span>
+        <span class="pill"><span class="en">GitHub Actions</span></span>
+        <span class="pill"><span class="en">YAML</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · AGENDA -->
+  <section class="slide" data-topic="אג׳נדה">
+    <div class="s-wrap">
+      <span class="kicker">לוח הזמנים של היום</span>
+      <h2>מה נעשה ב-3 השעות</h2>
+      <div class="grid two">
+        <div class="card">
+          <table class="agenda">
+            <tr><th style="width:130px">זמן</th><th>פעילות</th></tr>
+            <tr><td class="t">16:00–16:15</td><td>חזרה ויעדי המפגש</td></tr>
+            <tr><td class="t">16:15–17:30</td><td><span class="en">CI/CD</span>, <span class="en">Branches/PRs</span>, <span class="en">GitHub Actions</span></td></tr>
+            <tr><td class="t">17:30–17:40</td><td>הפסקה</td></tr>
+            <tr><td class="t">17:40–18:30</td><td>בניית <code>ci.yml</code> + הדגמה</td></tr>
+            <tr><td class="t">18:30–18:55</td><td>מעבדה עצמאית</td></tr>
+            <tr><td class="t">18:55–19:00</td><td>סיכום ומשימת בית</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">בסוף המפגש תדעו</h3>
+          <ul>
+            <li>להסביר מהו <span class="en">CI/CD</span> ולמה הוא חוסך באגים.</li>
+            <li>לעבוד עם <span class="en">branches</span>, <span class="en">Pull Requests</span> ו-<span class="en">code review</span>.</li>
+            <li>להבין את מבנה <span class="en">GitHub Actions</span> ולקרוא <span class="en">YAML</span>.</li>
+            <li>לכתוב <code>ci.yml</code> שבונה ובודק בכל <span class="en">push</span>.</li>
+            <li>להגן על <span class="en">main</span> עם <span class="en">required status check</span>.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · WHERE WE ARE -->
+  <section class="slide" data-topic="איפה אנחנו בבנייה">
+    <div class="s-wrap">
+      <span class="kicker">מפת הבנייה של הפרויקט</span>
+      <h2>איפה אנחנו בבניית ה-<span class="en">Tasks API</span></h2>
+      <div class="buildmap">
+        <div class="bm done"><div class="dot">1</div><div class="lab2">Code</div></div>
+        <div class="bm now"><div class="dot">2</div><div class="lab2">CI</div></div>
+        <div class="bm"><div class="dot">3</div><div class="lab2">Docker</div></div>
+        <div class="bm"><div class="dot">4</div><div class="lab2">AWS</div></div>
+        <div class="bm"><div class="dot">5</div><div class="lab2">Data</div></div>
+        <div class="bm"><div class="dot">6</div><div class="lab2">IaC</div></div>
+        <div class="bm"><div class="dot">7</div><div class="lab2">CD</div></div>
+        <div class="bm"><div class="dot">8</div><div class="lab2">Observe</div></div>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <div class="box simple"><div class="bt">היום — שלב 2: <span class="en">Build &amp; Test</span></div><p style="margin:0">מוסיפים <span class="en">GitHub Actions</span> שבונה את ה-<span class="en">JAR</span> ומריץ בדיקות בכל <span class="en">push</span>. הקלט הוא בדיוק הקוד ממפגש 1.</p></div>
+        <div class="box note"><div class="bt">כבר מאחורינו · הבא</div><p style="margin:0"><b>מפגש 1:</b> כתבנו והרצנו את ה-<span class="en">API</span> מקומית. <b>מפגש 3:</b> נארוז אותו ל-<span class="en">container</span> עם <span class="en">Docker</span>, וה-<span class="en">CI</span> יבנה גם את ה-<span class="en">image</span>.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · DIVIDER 1 -->
+  <section class="slide divider" data-topic="חלק 1 · למה CI">
+    <div class="s-wrap">
+      <div class="pnum">חלק 1</div>
+      <h2>למה <span class="en">CI/CD</span>?</h2>
+      <p>מה הבעיה שאוטומציה של בנייה ובדיקות פותרת — ולמה זה הדבר הראשון שמוסיפים אחרי שכותבים קוד.</p>
+    </div>
+  </section>
+
+  <!-- 5 · WHAT IS CI/CD -->
+  <section class="slide" data-topic="חלק 1 · למה CI">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>מה זה <span class="en">CI/CD</span>?</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><b><span class="en">CI</span></b> (אינטגרציה רציפה) = בכל פעם שמישהו דוחף קוד, מכונה אוטומטית <b>בונה ובודקת</b> אותו — כך תופסים שבירות תוך דקות, לא ימים. <b><span class="en">CD</span></b> (אספקה רציפה) = ממשיכים אוטומטית גם ל<b>פריסה</b> (מפגש 7).</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">CI</span> מריץ <span class="en">pipeline</span> על כל <span class="en">commit</span>: <span class="en">checkout</span> → <span class="en">build</span> → <span class="en">test</span> (→ <span class="en">lint</span>, <span class="en">scan</span>). מטרה: לשמור את ענף ה-<span class="en">main</span> תמיד "ירוק" — תקין וניתן לשחרור בכל רגע.</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt">היום מתמקדים ב-<span class="en">CI</span></div>נבנה את ה-<span class="en">build + test</span> האוטומטי. ה-<span class="en">CD</span> (פריסה אוטומטית) יתווסף במפגש 7, כשכבר יהיה לאן לפרוס.</div>
+    </div>
+  </section>
+
+  <!-- 6 · THE PROBLEM -->
+  <section class="slide" data-topic="חלק 1 · למה CI">
+    <div class="s-wrap">
+      <span class="kicker">הבעיה</span>
+      <h2>בלי <span class="en">CI</span>: באגים מתגלים מאוחר</h2>
+      <ul>
+        <li>מישהו דוחף קוד ששובר את הבנייה — ואף אחד לא יודע עד שמישהו אחר מנסה להריץ.</li>
+        <li>"בדקתי אצלי" — אבל שכחת קובץ, או הבדיקות לא רצו בכלל.</li>
+        <li>מיזוג של כמה אנשים יוצר התנגשויות שמתפוצצות רק בסוף.</li>
+      </ul>
+      <div class="grid two" style="margin-top:6px">
+        <div class="box simple"><div class="bt">עם <span class="en">CI</span></div><p style="margin:0">כל <span class="en">push</span> נבנה ונבדק על מכונה נקייה. שבירה מסומנת באדום תוך דקות, עם לוג מדויק.</p></div>
+        <div class="box tech"><div class="bt">"מכונה נקייה"</div><p style="margin:0">ה-<span class="en">runner</span> מתחיל מאפס בכל ריצה — אם זה עבד שם, זה לא תלוי ב"מה שמותקן אצלי". זה פותר את "אצלי זה עובד" עבור הבנייה והבדיקות.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · DIVIDER 2 -->
+  <section class="slide divider" data-topic="חלק 2 · Git בצוות">
+    <div class="s-wrap">
+      <div class="pnum">חלק 2</div>
+      <h2>עבודת צוות: <span class="en">Branches</span> ו-<span class="en">PRs</span></h2>
+      <p><span class="en">CI</span> חי על מנגנון ה-<span class="en">Pull Request</span> של <span class="en">GitHub</span>. נבין את זרימת העבודה שעליה הוא רץ.</p>
+    </div>
+  </section>
+
+  <!-- 8 · BRANCHES -->
+  <section class="slide" data-topic="חלק 2 · Git בצוות">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2><span class="en">Branches</span> (ענפים)</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><span class="en">branch</span> הוא "קו עבודה" נפרד. עובדים על פיצ׳ר בענף משלו בלי לפגוע ב-<span class="en">main</span> היציב, וממזגים פנימה כשמוכן.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">branch</span> הוא מצביע קל-משקל ל-<span class="en">commit</span>. <span class="en">main</span> הוא הענף הראשי. דפוס נפוץ: <span class="en">feature branch</span> קצר → <span class="en">PR</span> → מיזוג ל-<span class="en">main</span>.</p></div>
+      </div>
+<pre><span class="k">git checkout</span> <span class="o">-b</span> feature/health-message   <span class="c"># ענף חדש</span>
+<span class="c"># ...עורכים ומבצעים commit...</span>
+<span class="k">git push</span> <span class="o">-u</span> origin feature/health-message</pre>
+    </div>
+  </section>
+
+  <!-- 9 · PRs -->
+  <section class="slide" data-topic="חלק 2 · Git בצוות">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2><span class="en">Pull Request</span> ו-<span class="en">Code Review</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><span class="en">PR</span> = בקשה למזג את הענף שלך ל-<span class="en">main</span>. הוא מציג את ההבדלים (<span class="en">diff</span>), מאפשר לחברי צוות להעיר (<span class="en">review</span>), וכאן ה-<span class="en">CI</span> רץ אוטומטית.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">ה-<span class="en">PR</span> מקשר ענף-מקור לענף-יעד; כל <span class="en">push</span> לענף מעדכן את ה-<span class="en">PR</span> ומריץ מחדש את ה-<span class="en">checks</span>. מיזוג מתאפשר רק כשהבדיקות ירוקות והאישורים התקבלו.</p></div>
+      </div>
+      <div class="flow">
+        <span class="n">feature branch</span><span class="a">→</span>
+        <span class="n">Pull Request</span><span class="a">→</span>
+        <span class="n">CI checks + review</span><span class="a">→</span>
+        <span class="n">merge to main</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · STATUS CHECKS -->
+  <section class="slide" data-topic="חלק 2 · Git בצוות">
+    <div class="s-wrap">
+      <span class="kicker">שער איכות</span>
+      <h2><span class="en">Status Checks</span> ו-<span class="en">Branch Protection</span></h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">אפשר להגדיר ש-<span class="en">main</span> "נעול": אי-אפשר למזג <span class="en">PR</span> אם ה-<span class="en">CI</span> אדום. כך קוד שבור פשוט לא נכנס.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">Branch protection rule</span> על <span class="en">main</span>: דרישת <span class="en">PR</span>, דרישת <span class="en">status check</span> ירוק (ה-<span class="en">job</span> שלנו), ואופציונלית אישור <span class="en">reviewer</span> אחד לפחות.</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt">נגדיר את זה היום</div>בסוף המפגש נסמן את ה-<span class="en">job</span> של ה-<span class="en">CI</span> כ-<span class="en">required</span> על <span class="en">main</span> — שער האיכות הראשון של הפרויקט.</div>
+    </div>
+  </section>
+
+  <!-- 11 · DIVIDER 3 -->
+  <section class="slide divider" data-topic="חלק 3 · GitHub Actions">
+    <div class="s-wrap">
+      <div class="pnum">חלק 3</div>
+      <h2>אנטומיה של <span class="en">GitHub Actions</span></h2>
+      <p>מנוע ה-<span class="en">CI/CD</span> המובנה ב-<span class="en">GitHub</span>. נבין את חלקיו לפני שנכתוב את ה-<span class="en">workflow</span> הראשון.</p>
+    </div>
+  </section>
+
+  <!-- 12 · WHAT IS ACTIONS -->
+  <section class="slide" data-topic="חלק 3 · GitHub Actions">
+    <div class="s-wrap">
+      <span class="kicker">מושג ליבה</span>
+      <h2>מה זה <span class="en">GitHub Actions</span>?</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">שירות שמריץ אוטומציה ישירות מתוך ה-<span class="en">repo</span>: אתם מתארים בקובץ <span class="en">YAML</span> "מתי" ו"מה לעשות", ו-<span class="en">GitHub</span> מריץ את זה על מחשב זמני (<span class="en">runner</span>).</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">runner</span> = מכונה וירטואלית (למשל <span class="en">ubuntu-latest</span>) שנוצרת לכל ריצה ונמחקת בסוף. <span class="en">GitHub</span> מספק <span class="en">runners</span> מנוהלים בחינם (מכסה חודשית) ל-<span class="en">repos</span> ציבוריים ופרטיים.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 · HIERARCHY -->
+  <section class="slide" data-topic="חלק 3 · GitHub Actions">
+    <div class="s-wrap">
+      <span class="kicker">היררכיה</span>
+      <h2><span class="en">Workflow → Job → Step</span></h2>
+      <table>
+        <tr><th>רכיב</th><th>מה זה</th></tr>
+        <tr><td><span class="en">Workflow</span></td><td>קובץ <span class="en">YAML</span> ב-<code>.github/workflows/</code> — תהליך אוטומציה שלם, מופעל על אירוע</td></tr>
+        <tr><td><span class="en">Job</span></td><td>קבוצת צעדים שרצה על <span class="en">runner</span> אחד; <span class="en">jobs</span> רצים במקביל כברירת מחדל</td></tr>
+        <tr><td><span class="en">Step</span></td><td>פעולה בודדת בתוך <span class="en">job</span> — או פקודת <span class="en">shell</span> (<code>run</code>) או פעולה מוכנה (<code>uses</code>)</td></tr>
+        <tr><td><span class="en">Action</span></td><td>רכיב לשימוש חוזר מה-<span class="en">Marketplace</span> (למשל <code>actions/checkout</code>)</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 14 · TRIGGERS -->
+  <section class="slide" data-topic="חלק 3 · GitHub Actions">
+    <div class="s-wrap">
+      <span class="kicker">מתי זה רץ</span>
+      <h2><span class="en">Triggers</span> (אירועים)</h2>
+      <table>
+        <tr><th>אירוע</th><th>מתי</th></tr>
+        <tr><td><code>push</code></td><td>בכל דחיפת קוד (לכל ענף או לענפים מסוימים)</td></tr>
+        <tr><td><code>pull_request</code></td><td>כשנפתח/מתעדכן <span class="en">PR</span> — כאן נופלים שערי האיכות</td></tr>
+        <tr><td><code>workflow_dispatch</code></td><td>הפעלה ידנית בלחיצת כפתור</td></tr>
+        <tr><td><code>schedule</code></td><td>לפי לוח זמנים (<span class="en">cron</span>)</td></tr>
+      </table>
+      <div class="box note"><div class="bt">ה-<span class="en">CI</span> שלנו</div>ירוץ על <code>push</code> (כל ענף) ועל <code>pull_request</code> ל-<span class="en">main</span> — כך כל שינוי נבדק לפני מיזוג.</div>
+    </div>
+  </section>
+
+  <!-- 15 · YAML -->
+  <section class="slide" data-topic="חלק 3 · GitHub Actions">
+    <div class="s-wrap">
+      <span class="kicker">תחביר</span>
+      <h2><span class="en">YAML</span> ב-60 שניות</h2>
+      <div class="grid two">
+        <div>
+          <ul>
+            <li><b>הזחה (<span class="en">indentation</span>) קובעת מבנה</b> — רווחים, לא טאבים.</li>
+            <li><code>key: value</code> — זוג מפתח-ערך.</li>
+            <li><code>-</code> בתחילת שורה = פריט ברשימה.</li>
+            <li><code>#</code> = הערה.</li>
+          </ul>
+        </div>
+        <div>
+<pre><span class="o">name</span>: CI
+<span class="o">on</span>: [push]
+<span class="o">jobs</span>:
+  <span class="o">build</span>:
+    <span class="o">runs-on</span>: ubuntu-latest
+    <span class="o">steps</span>:
+      - <span class="o">run</span>: echo hello</pre>
+        </div>
+      </div>
+      <div class="box warn"><div class="bt">הטעות הנפוצה ביותר</div>הזחה שגויה. שמרו על עקביות (2 רווחים לרמה), ו-<span class="en">VS Code</span> יסמן שגיאות <span class="en">YAML</span>.</div>
+    </div>
+  </section>
+
+  <!-- 16 · USES vs RUN -->
+  <section class="slide" data-topic="חלק 3 · GitHub Actions">
+    <div class="s-wrap">
+      <span class="kicker">שני סוגי צעדים</span>
+      <h2><code>uses</code> מול <code>run</code></h2>
+      <div class="grid two">
+        <div class="card"><h3 style="margin-top:0"><code>uses</code> — פעולה מוכנה</h3>
+<pre>- <span class="o">uses</span>: actions/checkout@v5</pre>
+        <p style="margin:0">מריץ רכיב מה-<span class="en">Marketplace</span>. <code>actions/checkout</code> מושך את הקוד שלכם ל-<span class="en">runner</span>.</p></div>
+        <div class="card"><h3 style="margin-top:0"><code>run</code> — פקודת shell</h3>
+<pre>- <span class="o">run</span>: mvn -B verify</pre>
+        <p style="margin:0">מריץ פקודה רגילה ב-<span class="en">terminal</span> של ה-<span class="en">runner</span> — בדיוק מה שתריצו בעצמכם.</p></div>
+      </div>
+      <div class="box note"><div class="bt">גרסאות actions</div>נצמיד גרסת <span class="en">major</span> (למשל <code>@v5</code>). הגרסאות מתעדכנות — בדקו את האחרונה ב-<span class="en">GitHub Marketplace</span>.</div>
+    </div>
+  </section>
+
+  <!-- 17 · CACHING -->
+  <section class="slide" data-topic="חלק 3 · GitHub Actions">
+    <div class="s-wrap">
+      <span class="kicker">מהירות</span>
+      <h2><span class="en">Caching</span> — לא להוריד הכול כל פעם</h2>
+      <div class="grid two">
+        <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">בלי <span class="en">cache</span>, כל ריצה מורידה מחדש את כל תלויות ה-<span class="en">Maven</span> — איטי. <span class="en">cache</span> שומר אותן בין ריצות.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><code>actions/setup-java</code> מציע <code>cache: maven</code> מובנה — שומר את <code>~/.m2</code> עם מפתח לפי <code>pom.xml</code>. משחזר אוטומטית בריצה הבאה.</p></div>
+      </div>
+      <div class="box note" style="margin-top:14px"><div class="bt"><span class="en">Secrets</span> (טעימה)</div>ערכים רגישים (טוקנים, מפתחות) נשמרים ב-<span class="en">Settings → Secrets</span> ונקראים כ-<code>${{ secrets.NAME }}</code> — לעולם לא בקוד. נשתמש בזה לעומק במפגש 7 (<span class="en">CD</span>).</div>
+    </div>
+  </section>
+
+  <!-- 18 · DIVIDER 4 -->
+  <section class="slide divider" data-topic="חלק 4 · בונים CI">
+    <div class="s-wrap">
+      <div class="pnum">חלק 4</div>
+      <h2>בונים את ה-<span class="en">CI</span> של הפרויקט</h2>
+      <p>עכשיו נכתוב את <code>ci.yml</code> שבונה ובודק את ה-<span class="en">Tasks API</span> בכל <span class="en">push</span>.</p>
+    </div>
+  </section>
+
+  <!-- 19 · CI PLAN -->
+  <section class="slide" data-topic="חלק 4 · בונים CI">
+    <div class="s-wrap">
+      <span class="kicker">התוכנית</span>
+      <h2>מה ה-<span class="en">CI</span> שלנו יעשה</h2>
+      <div class="flow">
+        <span class="n">checkout</span><span class="a">→</span>
+        <span class="n">setup Java 17</span><span class="a">→</span>
+        <span class="n">mvn verify (build + tests)</span>
+      </div>
+      <ul>
+        <li>רץ על <code>push</code> ועל <code>pull_request</code> ל-<span class="en">main</span>.</li>
+        <li>מושך את הקוד, מתקין <span class="en">JDK 17</span> (עם <span class="en">cache</span>), ומריץ <code>mvn -B verify</code> — קומפילציה + בדיקות יחידה.</li>
+        <li>נכשל אם הבנייה או בדיקה כלשהי נכשלת.</li>
+      </ul>
+      <div class="box note"><div class="bt">בהמשך</div>במפגש 3 נוסיף <span class="en">job</span> שבונה גם את ה-<span class="en">Docker image</span>; במפגש 5 יתווספו בדיקות אינטגרציה מול <span class="en">LocalStack</span>.</div>
+    </div>
+  </section>
+
+  <!-- 20 · CI.YML part 1 -->
+  <section class="slide" data-topic="חלק 4 · קוד">
+    <div class="s-wrap">
+      <span class="kicker">קוד · <span class="en">ci.yml</span> (1/2)</span>
+      <h2>מתי לרוץ, ואיפה</h2>
+      <span class="filename">.github/workflows/ci.yml</span>
+<pre><span class="o">name</span>: CI
+<span class="o">on</span>:                          <span class="c"># מתי הצינור רץ</span>
+  <span class="o">push</span>:
+  <span class="o">pull_request</span>:
+    <span class="o">branches</span>: [ main ]
+
+<span class="o">jobs</span>:
+  <span class="o">build-test</span>:
+    <span class="o">runs-on</span>: ubuntu-latest     <span class="c"># runner נקי בכל ריצה</span>
+    <span class="o">steps</span>:
+      ...                       <span class="c"># בשקופית הבאה</span></pre>
+    </div>
+  </section>
+
+  <!-- 21 · CI.YML part 2 -->
+  <section class="slide" data-topic="חלק 4 · קוד">
+    <div class="s-wrap">
+      <span class="kicker">קוד · <span class="en">ci.yml</span> (2/2)</span>
+      <h2>הצעדים: <span class="en">checkout → Java → verify</span></h2>
+      <span class="filename">.github/workflows/ci.yml (steps)</span>
+<pre>    <span class="o">steps</span>:
+      - <span class="o">uses</span>: actions/checkout@v5      <span class="c"># מושך את הקוד</span>
+      - <span class="o">uses</span>: actions/setup-java@v5
+        <span class="o">with</span>:
+          <span class="o">distribution</span>: temurin
+          <span class="o">java-version</span>: <span class="s">'17'</span>
+          <span class="o">cache</span>: maven                 <span class="c"># מאיץ ריצות</span>
+      - <span class="o">name</span>: Build and test
+        <span class="o">run</span>: mvn -B verify             <span class="c"># קומפילציה + בדיקות</span></pre>
+      <p class="muted">זהו — קובץ אחד, וכל <span class="en">push</span> נבנה ונבדק אוטומטית.</p>
+    </div>
+  </section>
+
+  <!-- 22 · DEMO add CI -->
+  <section class="slide" data-topic="הדגמה · בניית שלב 2">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> מוסיפים <span class="en">CI</span> ל-<span class="en">repo</span></div>
+        <ol class="steps">
+          <li><b>גרסת הייחוס של היום</b> (לראות את התוצאה המלאה):
+<pre><span class="k">git checkout</span> <span class="o">v2-ci</span></pre></li>
+          <li><b>יוצרים את קובץ ה-<span class="en">workflow</span></b> במיקום המדויק:
+<pre><span class="o">.github/workflows/ci.yml</span>   <span class="c"># התוכן משתי השקופיות הקודמות</span></pre></li>
+          <li><b>דוחפים</b> ל-<span class="en">GitHub</span>:
+<pre><span class="k">git add</span> <span class="o">.github</span>
+<span class="k">git commit</span> <span class="o">-m</span> <span class="s">"add CI workflow"</span>
+<span class="k">git push</span></pre></li>
+          <li><b>צופים בריצה</b> בלשונית <span class="en">Actions</span> של ה-<span class="en">repo</span> → אמור להפוך לירוק.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 23 · DEMO failing test -->
+  <section class="slide" data-topic="הדגמה · CI תופס באג">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> רואים את ה-<span class="en">CI</span> תופס שבירה</div>
+        <ol class="steps">
+          <li><b>שוברים בכוונה</b> — משנים ערך שבדיקה מצפה לו (למשל בתגובת <code>/health</code>).</li>
+          <li><b>דוחפים</b> ובודקים את לשונית <span class="en">Actions</span>:
+<pre><span class="k">git commit</span> <span class="o">-am</span> <span class="s">"break health (demo)"</span>
+<span class="k">git push</span>
+<span class="c"># ה-CI נכשל — אדום, עם הלוג של הבדיקה שנפלה</span></pre></li>
+          <li><b>מתקנים</b> ודוחפים שוב → חוזר לירוק.</li>
+        </ol>
+        <div class="box note"><div class="bt">זה כל הרעיון</div>הבאג נתפס תוך דקות, אוטומטית, לפני שהגיע ל-<span class="en">main</span> — ולא אצל משתמש.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 24 · DEMO branch protection -->
+  <section class="slide" data-topic="הדגמה · נעילת main">
+    <div class="s-wrap">
+      <div class="block demo">
+        <div class="hd"><span class="badge">הדגמה</span> נועלים את <span class="en">main</span> (<span class="en">Branch Protection</span>)</div>
+        <p class="muted">בממשק <span class="en">GitHub</span> הנוכחי:</p>
+        <ol class="steps">
+          <li><span class="en">Repo</span> → <span class="en">Settings</span> → <span class="en">Branches</span> → <span class="en">Add branch ruleset</span> (או <span class="en">Add rule</span>).</li>
+          <li>מגדירים את היעד לענף <code>main</code>.</li>
+          <li>מסמנים <b><span class="en">Require status checks to pass</span></b> ובוחרים את ה-<span class="en">job</span> שלנו (<code>build-test</code>).</li>
+          <li>אופציונלי: <b><span class="en">Require a pull request before merging</span></b> (+ אישור <span class="en">reviewer</span>).</li>
+        </ol>
+        <div class="box note"><div class="bt">התוצאה</div>מעכשיו אי-אפשר למזג ל-<span class="en">main</span> אם ה-<span class="en">CI</span> אדום. שער איכות אמיתי.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 25 · LAB -->
+  <section class="slide" data-topic="מעבדה">
+    <div class="s-wrap">
+      <div class="block lab">
+        <div class="hd"><span class="badge">מעבדה</span> בנו את שלב 2 — 25 דקות</div>
+        <ol class="steps">
+          <li><b>צרו ענף:</b> <code>git checkout -b add-ci</code>.</li>
+          <li><b>הוסיפו</b> את <code>.github/workflows/ci.yml</code> (מהשקופיות).</li>
+          <li><b>דחפו</b> ופתחו <span class="en">Pull Request</span> ל-<span class="en">main</span>; צפו ב-<span class="en">CI</span> רץ על ה-<span class="en">PR</span>.</li>
+          <li><b>שברו בדיקה</b> בכוונה, דחפו, וראו את ה-<span class="en">check</span> הופך לאדום; תקנו וראו ירוק.</li>
+          <li><b>אתגר:</b> הפעילו <span class="en">Branch Protection</span> שמחייב את ה-<span class="en">check</span> לפני מיזוג, ואז מזגו את ה-<span class="en">PR</span>.</li>
+        </ol>
+        <div class="box note" style="margin-top:6px"><div class="bt">סימן הצלחה</div>ה-<span class="en">PR</span> מראה <span class="en">check</span> ירוק, מיזוג נחסם כשהוא אדום, וה-<span class="en">main</span> נשאר תקין.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 26 · HW -->
+  <section class="slide" data-topic="משימת בית">
+    <div class="s-wrap">
+      <div class="block hw">
+        <div class="hd"><span class="badge">משימת בית</span> לפני מפגש 3</div>
+        <ol class="steps">
+          <li><b>הוסיפו בדיקת יחידה</b> חדשה (למשל: <code>POST</code> עם כותרת ריקה מחזיר <span class="en">400</span>), ודאו שה-<span class="en">CI</span> מריץ אותה.</li>
+          <li><b>הוסיפו <span class="en">build badge</span></b> ל-<code>README.md</code> (תג הסטטוס של ה-<span class="en">workflow</span>) — כך רואים אם ה-<span class="en">build</span> ירוק ישר מה-<span class="en">repo</span>.</li>
+          <li><b>קריאה:</b> "פירמידת הבדיקות" (<span class="en">unit / integration / e2e</span>) — נשתמש בה בהמשך.</li>
+        </ol>
+        <div class="box note" style="margin-top:6px"><div class="bt">טיפ ל-badge</div>ב-<span class="en">GitHub</span>: <span class="en">Actions</span> → בוחרים את ה-<span class="en">workflow</span> → <span class="en">"Create status badge"</span> → מדביקים ל-<code>README</code>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 27 · RECAP + NEXT -->
+  <section class="slide" data-topic="סיכום">
+    <div class="s-wrap">
+      <span class="kicker">סיכום מפגש 2</span>
+      <h2>מה בנינו, ולאן ממשיכים</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3 style="margin-top:0">שלב 2 הושלם — <span class="en">Build &amp; Test</span></h3>
+          <ul>
+            <li>הבנו <span class="en">CI/CD</span>, <span class="en">branches/PRs</span> ו-<span class="en">GitHub Actions</span>.</li>
+            <li>בנינו <code>ci.yml</code> שבונה ובודק בכל <span class="en">push</span>.</li>
+            <li>נעלנו את <span class="en">main</span> מאחורי <span class="en">CI</span> ירוק.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">הבא — מפגש 3: <span class="en">Docker</span></h3>
+          <ul>
+            <li>נארוז את ה-<span class="en">Tasks API</span> ל-<span class="en">container</span>.</li>
+            <li>נריץ אותו זהה בכל מקום, ונרחיב את ה-<span class="en">CI</span> לבניית ה-<span class="en">image</span>.</li>
+          </ul>
+          <div class="box note" style="margin-top:6px"><div class="bt">למה זה הסדר</div>קודם מוודאים שהקוד נבנה ונבדק (היום), ורק אז אורזים אותו — בדיוק מחזור החיים.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 28 · END -->
+  <section class="slide cover" data-topic="סוף">
+    <div class="s-wrap">
+      <div class="eyebrow">מפגש 2 הושלם · שלב <span class="en">Build &amp; Test</span></div>
+      <h1>שאלות?<br><span class="accent">נתראה במפגש 3 — <span class="en">Docker</span> (<span class="en">Package</span>)</span></h1>
+      <p class="sub">תזכורת: <code>ci.yml</code> ירוק ב-<span class="en">repo</span>, בדיקה חדשה ו-<span class="en">build badge</span> ב-<code>README</code>.</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="navbar">
+  <button id="prev" onclick="go(-1)">→ הקודם</button>
+  <div style="text-align:center"><div class="count" id="count">1 / 1</div><div class="hint">מקשים: ← הבא · → הקודם</div></div>
+  <button id="next" class="primary" onclick="go(1)">הבא ←</button>
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const stage = document.getElementById('stage');
+  let i = 0;
+  function clamp(n){ return Math.max(0, Math.min(slides.length-1, n)); }
+  function fit(){
+    const wrap = slides[i] && slides[i].querySelector('.s-wrap');
+    if(!wrap) return;
+    wrap.style.transform='none';
+    const pad=22;
+    const availH = stage.clientHeight - pad*2;
+    const availW = stage.clientWidth - pad*2;
+    const h = wrap.offsetHeight, w = wrap.offsetWidth;
+    if(!h || !w) return;
+    const scale = Math.min(1, availH/h, availW/w);
+    wrap.style.transform = scale<0.999 ? 'scale('+scale.toFixed(4)+')' : 'none';
+  }
+  function render(){
+    slides.forEach((s,k)=> s.classList.toggle('active', k===i));
+    document.getElementById('count').textContent = (i+1)+' / '+slides.length;
+    document.getElementById('pbar').style.width = ((i+1)/slides.length*100)+'%';
+    document.getElementById('topic').textContent = 'מפגש 2 — ' + (slides[i].dataset.topic||'');
+    document.getElementById('prev').disabled = (i===0);
+    document.getElementById('next').disabled = (i===slides.length-1);
+    requestAnimationFrame(fit);
+    history.replaceState(null,'', '#'+(i+1));
+  }
+  function go(d){ i = clamp(i+d); render(); }
+  function jump(n){ i = clamp(n); render(); }
+  document.addEventListener('keydown', e=>{
+    if(e.key==='ArrowLeft' || e.key===' ' || e.key==='PageDown'){ e.preventDefault(); go(1); }
+    else if(e.key==='ArrowRight' || e.key==='PageUp'){ e.preventDefault(); go(-1); }
+    else if(e.key==='Home'){ jump(0); }
+    else if(e.key==='End'){ jump(slides.length-1); }
+  });
+  function toggleFs(){ if(!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); } else { document.exitFullscreen && document.exitFullscreen(); } }
+  window.addEventListener('resize', ()=>requestAnimationFrame(fit));
+  document.addEventListener('fullscreenchange', ()=>requestAnimationFrame(fit));
+  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>requestAnimationFrame(fit)); }
+  const start = parseInt((location.hash||'').replace('#',''),10);
+  if(!isNaN(start)) i = clamp(start-1);
+  render();
+</script>
+</body>
+</html>
