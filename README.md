@@ -11,6 +11,7 @@ Actions CI/CD (OIDC), CloudWatch + X-Ray.
 > to check out the repo as it looked at the end of any session.
 
 - **Architecture:** [docs/architecture.md](docs/architecture.md)
+- **Demo:** [docs/demo.md](docs/demo.md)
 - **Operations:** [docs/runbook.md](docs/runbook.md)
 - **Full spec:** [docs/tasks-api-prd.md](docs/tasks-api-prd.md)
 
