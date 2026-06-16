@@ -23,9 +23,6 @@ curl -s http://localhost:8080/health
 # {"status":"UP","version":"local"}
 ```
 
-Tear it all down at the end with `make compose-down` (the `-v` flag in that
-target also removes the volumes, so you start clean next time).
-
 ## Reading the curl commands
 
 Every request below is plain `curl`. These are the only flags used:
@@ -190,6 +187,8 @@ fires an alarm to SNS. See the [runbook](runbook.md) for that path.
 make compose-down    # stops containers and removes volumes
 ```
 
+The `-v` flag in that target removes the volumes too, so you start clean next time.
+
 ---
 
 ## Part 2 — the same demo against the live AWS stack
@@ -279,13 +278,13 @@ to use `docker logs`; here it's CloudWatch):
 aws logs tail /tasks-api/app --since 10m --region eu-central-1 | grep '"path":"/tasks"' | tail -5
 
 # EMF metric lines — CloudWatch reads these as TasksCreated / durationMs in the
-# "TasksApi" namespace (one line is BOTH a log entry and a metric)
+# "TasksApi" namespace
 aws logs tail /tasks-api/app --since 10m --region eu-central-1 | grep TasksCreated | tail -3
 ```
 
-Plus the **CloudWatch alarm** (any `5xx` or Lambda error in a 5-minute window fires
-to SNS) and the **X-Ray** service map for the Lambda — neither exists under
-LocalStack. See [architecture.md](architecture.md) and the [runbook](runbook.md).
+Plus the **CloudWatch alarm** and the **X-Ray** service map for the Lambda — neither
+exists under LocalStack. See [architecture.md](architecture.md) and the
+[runbook](runbook.md).
 
 > ⚠️ Known issue: the EC2 app's OpenTelemetry agent is still pointed at
 > `http://otel-collector:4317` (a docker-compose-only hostname), so on EC2 its span
@@ -304,6 +303,35 @@ LocalStack. See [architecture.md](architecture.md) and the [runbook](runbook.md)
 | `/health` version | `local` | the deployed git SHA |
 | Logs / metrics / alarm / X-Ray | not available | live in CloudWatch / X-Ray |
 | Tear down | `make compose-down` | `make destroy` |
+
+### What you're paying for (and what you're not)
+
+The live stack is billable, but the bill is lopsided: **almost all of it is the one
+running VM.** Everything else is usage-based and effectively free at demo scale.
+
+| Resource                                                | ~ Monthly | Why                                                |
+|---------------------------------------------------------|-----------|----------------------------------------------------|
+| **EC2 instance** (t3.micro)                             | ~$7–8     | **The main cost** — a VM powered on 24/7           |
+| **Public IPv4** address                                 | ~$3.60    | Charged per public IP since Feb 2024, even in-use  |
+| **EBS volume** (the disk)                               | ~$1       | Per-GB — bills even when the instance is *stopped* |
+| ECR repository                                          | ~$0.03    | Image storage (~$0.10/GB·month)                    |
+| DynamoDB (`tasks` + `tflock`)                           | ~$0       | On-demand; idle ≈ free, 25 GB storage free         |
+| Lambda (`tasks-api-events`)                             | ~$0       | 1M invocations/month free                          |
+| SQS (queue + DLQ)                                       | ~$0       | 1M requests/month free                             |
+| SNS (`task-notifications`)                              | ~$0       | 1M publishes/month free                            |
+| S3 (tfstate bucket)                                     | ~$0       | A few KB of Terraform state                        |
+| CloudWatch (2 alarms, 2 log groups)                     | ~$0       | First 10 alarms + 5 GB ingest free                 |
+| Security group · SSM param · event-source-mapping · IAM | $0        | Free to exist — configuration only                 |
+
+So the standing cost is **≈ $12/month, ~95% of it the EC2 + its public IP** — the
+`running` resource. The `~$0` rows bill per-request/per-GB and sit inside the free
+tier at demo traffic. With the project's **$200 / 6-month credit** (and t3.micro's
+12-month free-tier compute), you're likely not paying out of pocket yet — but it
+still accrues against the credit.
+
+> **Stopping ≠ free.** `aws ec2 stop-instances` halts the ~$8 compute charge, but
+> the EBS volume keeps billing (the disk persists). To take cost to ≈ $0 you must
+> **destroy**, not stop.
 
 ### Destroy everything on AWS
 

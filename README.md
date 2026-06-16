@@ -110,6 +110,22 @@ Full details in [docs/runbook.md](docs/runbook.md). In short:
 
 There are **no long-lived AWS keys** anywhere — GitHub authenticates via OIDC.
 
+## Inspect what's deployed (live)
+
+`scripts/aws-resources.sh` snapshots everything in your account into a
+self-contained dark-mode HTML dashboard — searchable, sortable, grouped by service.
+
+```bash
+./scripts/aws-resources.sh            # this project's region (eu-central-1)
+./scripts/aws-resources.sh us-east-1  # another region
+```
+
+It goes beyond "what exists": it queries EC2 / Lambda / DynamoDB for **live state**
+(running / active / stopped) and probes the app's `/health` to show — in a banner
+and on the EC2 row — whether the API is actually **serving**, with its version and
+latency. Read-only; uses your existing AWS CLI/SSO credentials. The generated
+`aws-resources*.html` is gitignored (it holds your account id and ARNs).
+
 ## Observability
 
 - **Logs:** structured JSON to stdout → CloudWatch Logs (queryable with Logs
@@ -150,7 +166,7 @@ lambda/               SQS consumer Lambda (Java)
 docker/               Dockerfile, .dockerignore lives at repo root, docker-compose
 localstack/init/      scripts that set up LocalStack on startup
 infra/                Terraform (root module) + bootstrap/ (state backend)
-scripts/              local-seed.sh, smoke-test.sh
+scripts/              local-seed.sh, smoke-test.sh, aws-resources.sh
 .github/workflows/    ci.yml, cd.yml
 docs/                 architecture.md, runbook.md, PRD
 ```

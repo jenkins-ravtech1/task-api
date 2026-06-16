@@ -16,6 +16,9 @@
 #   * This API is REGIONAL and lists only resources that SUPPORT tagging.
 #   * Uses your existing AWS CLI credentials. If you use SSO and the token has
 #     expired, run `aws sso login` first.
+#   * It also probes the app's /health on the running app instance(s) for LIVE
+#     serving status. Tune with: APP_PORT (default 8080), APP_NAME (the instance
+#     Name tag, default tasks-api-app), HEALTH_PATH (default /health).
 # =============================================================================
 set -euo pipefail
 
@@ -79,11 +82,51 @@ for _t in $DDB_TABLES; do
   add_pair "dynamodb|$_t" "$_st"
 done
 
+# EBS volumes → in-use (attached) / available (detached) / …  A volume that's
+# been DELETED simply won't appear here, even though the tagging API may still
+# list it — the HTML treats "missing from this list" as deleted/ghost.
+EBS_RAW="$(aws ec2 describe-volumes --region "$REGION" \
+  --query 'Volumes[].[VolumeId,State]' --output text 2>/dev/null || true)"
+while IFS=$'\t' read -r _vid _st; do
+  if [ -n "$_vid" ]; then add_pair "ec2|$_vid" "$_st"; fi
+done <<< "$EBS_RAW"
+
 STATUS_JSON="{${status_pairs%,}}"
 
-# Embed both blobs as base64 — sidesteps every quoting/`</script>` escaping issue.
+# --- Live app health ---------------------------------------------------------
+# "running" above only means the VM is on. This probes the app's /health on the
+# running app instance(s) to say whether the API is actually SERVING.
+APP_TAG="${APP_NAME:-tasks-api-app}"
+HEALTH_PORT="${APP_PORT:-8080}"
+HEALTH_PATH="${HEALTH_PATH:-/health}"
+c_info "Probing app health (${APP_TAG}:${HEALTH_PORT}${HEALTH_PATH})…"
+health_items=""
+APP_INSTANCES="$(aws ec2 describe-instances --region "$REGION" \
+  --filters "Name=tag:Name,Values=${APP_TAG}" "Name=instance-state-name,Values=running" \
+  --query 'Reservations[].Instances[].[InstanceId,PublicIpAddress]' --output text 2>/dev/null || true)"
+while IFS=$'\t' read -r _iid _ip; do
+  if [ -z "$_iid" ]; then continue; fi
+  if [ -z "$_ip" ] || [ "$_ip" = "None" ]; then
+    health_items+="{\"id\":\"$_iid\",\"ip\":\"\",\"port\":$HEALTH_PORT,\"ok\":false,\"code\":\"no-public-ip\",\"status\":\"\",\"version\":\"\",\"t\":0},"
+    continue
+  fi
+  # One curl captures body + status code + total time.
+  _resp="$(curl -s -m 5 -w $'\n%{http_code}\n%{time_total}' "http://${_ip}:${HEALTH_PORT}${HEALTH_PATH}" 2>/dev/null || true)"
+  _t="${_resp##*$'\n'}";  _rest="${_resp%$'\n'*}"
+  _code="${_rest##*$'\n'}"; _body="${_rest%$'\n'*}"
+  case "$_t" in ''|*[!0-9.]*) _t=0;; esac
+  [ -n "$_code" ] || _code="000"
+  _status="$(printf '%s' "$_body" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p')"
+  _version="$(printf '%s' "$_body" | sed -n 's/.*"version":"\([^"]*\)".*/\1/p')"
+  _ok=false; [ "$_code" = "200" ] && _ok=true
+  health_items+="{\"id\":\"$_iid\",\"ip\":\"$_ip\",\"port\":$HEALTH_PORT,\"ok\":$_ok,\"code\":\"$_code\",\"status\":\"$_status\",\"version\":\"$_version\",\"t\":$_t},"
+done <<< "$APP_INSTANCES"
+HEALTH_JSON="[${health_items%,}]"
+
+# Embed the blobs as base64 — sidesteps every quoting/`</script>` escaping issue.
 DATA_B64="$(printf '%s' "$RES_JSON" | base64 | tr -d '\n')"
 STATUS_B64="$(printf '%s' "$STATUS_JSON" | base64 | tr -d '\n')"
+HEALTH_B64="$(printf '%s' "$HEALTH_JSON" | base64 | tr -d '\n')"
 TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S %Z')"
 
 # ---- generate the HTML (static head, injected data, static app) -------------
@@ -121,6 +164,8 @@ header.topbar{background:linear-gradient(180deg,var(--navy),var(--navy2));color:
 .search input::placeholder{color:var(--muted)}
 .search:focus-within{border-color:#3a434f}
 .shown{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.toggle{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none}
+.toggle input{accent-color:var(--orange);cursor:pointer;margin:0}
 table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 thead th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap}
 thead th.nosort{cursor:default}
@@ -144,8 +189,17 @@ code.arn:hover{color:var(--orange)}
 .state-pending{color:#d8a019} .state-pending .sdot{background:#d8a019}
 .state-down{color:#f85149} .state-down .sdot{background:#f85149}
 .state-unknown{color:#8a94a3} .state-unknown .sdot{background:#5a626d}
+.state-gone{color:#6b7785;text-decoration:line-through} .state-gone .sdot{background:#46505e}
 .runcount{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--ink);font-weight:600}
 .legend{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px}
+.health{max-width:1200px;margin:16px auto 0;padding:0 24px;display:flex;flex-direction:column;gap:8px}
+.hbanner{display:flex;align-items:center;gap:14px;padding:11px 16px;border-radius:10px;font-size:13px;border:1px solid;flex-wrap:wrap}
+.hbanner.ok{background:rgba(63,185,80,.10);border-color:rgba(63,185,80,.35)}
+.hbanner.down{background:rgba(248,81,73,.10);border-color:rgba(248,81,73,.35)}
+.hbanner .lbl{font-weight:700;display:inline-flex;align-items:center;gap:7px}
+.hbanner.ok .lbl{color:#3fb950}
+.hbanner.down .lbl{color:#f85149}
+.hbanner .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--muted)}
 .empty{text-align:center;padding:64px 20px;color:var(--muted)}
 .empty h2{color:var(--ink);font-weight:600;margin:0 0 8px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#2b3340;color:#fff;border:1px solid #3a434f;padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:.2s}
@@ -164,6 +218,7 @@ footer code{background:var(--chip);padding:1px 6px;border-radius:5px}
     <span>Generated <b id="m-time">&mdash;</b></span>
   </div>
 </header>
+<div class="health" id="health"></div>
 <div class="wrap">
   <div class="summary">
     <div class="total"><b id="total">0</b>resources</div>
@@ -175,6 +230,7 @@ footer code{background:var(--chip);padding:1px 6px;border-radius:5px}
       <span class="muted">&#8981;</span>
       <input id="search" type="text" placeholder="Filter by name, service, type, ARN, or tag&hellip;" autofocus>
     </label>
+    <label class="toggle"><input type="checkbox" id="hideGone" checked> Hide terminated / deleted</label>
     <span class="shown" id="shown"></span>
   </div>
   <div id="tableWrap">
@@ -204,9 +260,11 @@ footer code{background:var(--chip);padding:1px 6px;border-radius:5px}
     <span class="state state-pending"><span class="sdot"></span>updating</span>
     <span class="state state-down"><span class="sdot"></span>stopped / failed</span>
     <span class="state state-unknown"><span class="sdot"></span>not checked</span>
+    <span class="state state-gone"><span class="sdot"></span>terminated / deleted</span>
   </div>
   Source: <code>aws resourcegroupstaggingapi get-resources</code> &middot; regional &middot; lists only resources that support tagging.<br>
   <b>State</b> is live &mdash; queried from EC2 / Lambda / DynamoDB. Services with no run-state (SQS, SNS, S3, ECR, IAM&hellip;) show <i>available</i> when present.<br>
+  The banner above probes <code>/health</code> on the running app instance(s) &mdash; it's the definitive "is the API serving" check (tune with <code>APP_PORT</code> / <code>APP_NAME</code>).<br>
   Scan another region: <code>./scripts/aws-resources.sh us-east-1</code> (us-east-1 also surfaces many global resources such as IAM and CloudFront).
 </footer>
 <div class="toast" id="toast"></div>
@@ -217,6 +275,7 @@ printf '  window.__META__ = { account: "%s", caller: "%s", region: "%s", generat
   "$ACCOUNT" "$CALLER" "$REGION" "$TIMESTAMP"
 printf '  window.__DATA_B64__ = "%s";\n' "$DATA_B64"
 printf '  window.__STATUS_B64__ = "%s";\n' "$STATUS_B64"
+printf '  window.__HEALTH_B64__ = "%s";\n' "$HEALTH_B64"
 
 cat <<'HTML_BODY'
 </script>
@@ -224,6 +283,8 @@ cat <<'HTML_BODY'
 const META   = window.__META__ || {};
 const raw    = decodeData(window.__DATA_B64__ || "");
 const STATUS = decodeMap(window.__STATUS_B64__ || "");
+const HEALTH = decodeArr(window.__HEALTH_B64__ || "");
+const HEALTHBYID = {}; HEALTH.forEach(h => { HEALTHBYID[h.id] = h; });
 
 function decodeData(b64){
   if(!b64) return {ResourceTagMappingList:[]};
@@ -240,6 +301,14 @@ function decodeMap(b64){
     return JSON.parse(new TextDecoder("utf-8").decode(bytes)) || {};
   }catch(e){ return {}; }
 }
+function decodeArr(b64){
+  if(!b64) return [];
+  try{
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const v = JSON.parse(new TextDecoder("utf-8").decode(bytes));
+    return Array.isArray(v) ? v : [];
+  }catch(e){ return []; }
+}
 
 // Map a resource's live state to a label, colour class, and sort rank.
 function statusFor(it){
@@ -247,15 +316,30 @@ function statusFor(it){
   const s = rs == null ? null : String(rs).toLowerCase();
   const B = (label, cls, rank) => ({label, cls, rank});
   if(it.service === "ec2"){
-    if(s === "running") return B("running","up",0);
+    if(it.type === "volume"){
+      if(s === "in-use") return B("in-use","ready",2);
+      if(s === "available") return B("detached","pending",1);   // orphan — still billing
+      if(s === "creating" || s === "deleting") return B(s,"pending",1);
+      if(s) return B(s,"idle",3);
+      return B("deleted","gone",6);                             // not in describe-volumes → gone
+    }
+    if(it.type && it.type !== "instance") return B("available","ready",2);  // security-group, etc.
+    if(s === "running"){
+      const h = HEALTHBYID[it.name];           // did we probe /health on this box?
+      if(h) return h.ok ? B("running · API up","up",0) : B("running · API down","down",-1);
+      return B("running","up",0);
+    }
     if(s === "pending" || s === "rebooting") return B(s,"pending",1);
     if(s === "stopping" || s === "shutting-down") return B(s,"pending",1);
     if(s === "stopped") return B("stopped","down",4);
-    if(s === "terminated") return B("terminated","down",4);
+    if(s === "terminated") return B("terminated","gone",6);     // ghost — already destroyed
     if(s) return B(s,"idle",3);
-    return B("unknown","unknown",5);
+    return B("gone","gone",6);                                  // not in describe → terminated/purged
   }
   if(it.service === "lambda"){
+    // Only actual functions have a run-state; event-source-mappings, layers, etc.
+    // are just "present" — don't fake an "active" for them.
+    if(it.type && it.type !== "function") return B("available","ready",2);
     if(s === null || s === "none" || s === "active") return B("active","up",0);
     if(s === "pending") return B("pending","pending",1);
     if(s === "inactive") return B("inactive","idle",3);
@@ -298,11 +382,14 @@ items.forEach(it => {
   it.search += " " + s.label.toLowerCase();
 });
 
-const state = { q:"", svc:null, key:"service", dir:1 };
+const state = { q:"", svc:null, key:"service", dir:1, hideGone:true };
 const $ = id => document.getElementById(id);
 
 function view(){
-  let v = items.filter(it => (!state.svc || it.service === state.svc) && (!state.q || it.search.includes(state.q)));
+  let v = items.filter(it =>
+    (!state.svc || it.service === state.svc) &&
+    (!state.q || it.search.includes(state.q)) &&
+    (!state.hideGone || it.stateCls !== "gone"));
   v.sort((a,b) => {
     if(state.key === "state"){
       const d = (a.stateRank - b.stateRank) * state.dir;
@@ -319,7 +406,9 @@ function td(text, cls){ const d = document.createElement("td"); if(cls) d.classN
 function renderRows(){
   const v = view(), tb = $("rows");
   tb.textContent = "";
-  $("shown").textContent = `Showing ${v.length} of ${items.length}`;
+  const ghosts = items.filter(i => i.stateCls === "gone").length;
+  $("shown").textContent = `Showing ${v.length} of ${items.length}` +
+    (state.hideGone && ghosts ? ` · ${ghosts} terminated/deleted hidden` : "");
   $("empty").style.display = v.length ? "none" : "block";
   $("tableWrap").style.display = v.length ? "block" : "none";
   for(const it of v){
@@ -369,6 +458,30 @@ function renderChips(){
   }
 }
 
+function renderHealth(){
+  const box = $("health"); box.textContent = "";
+  for(const h of HEALTH){
+    const div = document.createElement("div");
+    div.className = "hbanner " + (h.ok ? "ok" : "down");
+    const lbl = document.createElement("span"); lbl.className = "lbl";
+    const dot = document.createElement("span"); dot.className = "sdot";
+    dot.style.background = h.ok ? "#3fb950" : "#f85149";
+    lbl.appendChild(dot);
+    lbl.appendChild(document.createTextNode(h.ok ? "API healthy" : "API not responding"));
+    div.appendChild(lbl);
+    const url = document.createElement("span"); url.className = "mono";
+    url.textContent = h.ip ? ("http://" + h.ip + ":" + h.port + "/health") : (h.id + " (no public IP)");
+    div.appendChild(url);
+    const bits = [];
+    if(h.ok && h.status) bits.push(h.status);
+    if(h.ok && h.version) bits.push("version " + String(h.version).slice(0, 12));
+    if(h.ok && h.t) bits.push(Math.round(h.t * 1000) + " ms");
+    if(!h.ok && h.code) bits.push(h.code === "000" ? "unreachable" : "HTTP " + h.code);
+    for(const b of bits){ const s = document.createElement("span"); s.className = "mono"; s.textContent = b; div.appendChild(s); }
+    box.appendChild(div);
+  }
+}
+
 function updateArrows(){
   document.querySelectorAll("th[data-key]").forEach(th => {
     const a = th.querySelector(".arrow"); if(!a) return;
@@ -407,6 +520,7 @@ $("m-time").textContent    = META.generatedAt || "—";
 
 // events
 $("search").addEventListener("input", e => { state.q = e.target.value.trim().toLowerCase(); renderRows(); });
+$("hideGone").addEventListener("change", e => { state.hideGone = e.target.checked; renderRows(); });
 document.querySelectorAll("th[data-key]").forEach(th => {
   th.onclick = () => {
     const k = th.dataset.key;
@@ -415,6 +529,7 @@ document.querySelectorAll("th[data-key]").forEach(th => {
   };
 });
 
+renderHealth();
 renderChips();
 updateArrows();
 renderRows();
