@@ -280,7 +280,7 @@
 <span class="k">RUN</span> mvn -q -pl app -am -DskipTests package
 
 <span class="c"># שלב 2: הרצה (JRE רזה בלבד)</span>
-<span class="k">FROM</span> eclipse-temurin:17-jre
+<span class="k">FROM</span> eclipse-temurin:17-jre-alpine <span class="k">AS</span> runtime
 <span class="k">WORKDIR</span> /app
 <span class="k">COPY</span> --from=build /src/app/target/*-shaded.jar app.jar
 <span class="k">EXPOSE</span> 8080
@@ -311,7 +311,7 @@
         <div class="hd"><span class="badge">הדגמה</span> בונים רזה ודוחפים ל-<span class="en">ECR</span></div>
         <ol class="steps">
           <li><b>בונים</b> את ה-<span class="en">image</span> הרב-שלבי (פקודה אחת, בלי <code>mvn</code> מקומי):
-<pre><span class="k">docker build</span> -f docker/Dockerfile -t tasks-api .</pre></li>
+<pre><span class="k">docker build</span> --platform linux/amd64 -f docker/Dockerfile -t tasks-api .</pre></li>
           <li><b>מתחברים</b> ל-<span class="en">ECR</span> (ה-<span class="en">repo</span> נוצר ב-<span class="en">Terraform</span> בהמשך):
 <pre><span class="k">aws</span> ecr get-login-password --region &lt;region&gt; \
  | <span class="k">docker</span> login --username AWS --password-stdin &lt;repo-uri&gt;</pre></li>
@@ -472,7 +472,7 @@
   instance_type        = var.instance_type
   iam_instance_profile = aws_iam_instance_profile.app.name
   vpc_security_group_ids = [aws_security_group.app.id]
-  user_data = file(<span class="s">"user-data.sh"</span>)   <span class="c"># מתקין docker, מושך מ-ECR, מריץ</span>
+  user_data = templatefile(<span class="s">"${path.module}/user-data.sh.tftpl"</span>, { ... })  <span class="c"># מתקין docker, מושך מ-ECR, מריץ</span>
 }</pre>
       <div class="box note"><div class="bt"><span class="en">user-data</span></div>סקריפט שרץ באתחול השרת: מתקין <span class="en">Docker</span>, מתחבר ל-<span class="en">ECR</span>, מושך את ה-<span class="en">image</span> ומריץ אותו כשירות. ה-<span class="en">IAM role</span> נותן לשרת הרשאה ל-<span class="en">ECR</span>/<span class="en">DynamoDB</span> — בלי מפתחות.</div>
     </div>
@@ -566,7 +566,7 @@
           <h3 style="margin-top:0">הבא — מפגש 7: <span class="en">CD</span></h3>
           <ul>
             <li>נחבר <span class="en">CI</span> + <span class="en">Docker</span> + <span class="en">ECR</span> + <span class="en">Terraform</span> לצינור אחד.</li>
-            <li><span class="en">push</span> ל-<span class="en">main</span> → בנייה → דחיפה → <span class="en">apply</span> → פריסה — אוטומטית.</li>
+            <li><span class="en">push</span> ל-<span class="en">main</span> מפעיל בנייה, דחיפה, <span class="en">apply</span> ופריסה — אוטומטית.</li>
           </ul>
           <div class="box warn" style="margin-top:6px"><div class="bt">לא לשכוח</div>שהתשתית נמחקה, וה-<span class="en">Terraform</span> מעודכן ב-<span class="en">repo</span>.</div>
         </div>

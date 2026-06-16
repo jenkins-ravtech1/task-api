@@ -272,7 +272,7 @@
       <div class="block demo">
         <div class="hd"><span class="badge">הדגמה</span> רשת ביטחון: <span class="en">Budget</span> + התראה</div>
         <ol class="steps">
-          <li>בקונסולה: <span class="en">Billing and Cost Management</span> → <span class="en">Budgets</span> → <span class="en">Create budget</span>.</li>
+          <li>בקונסולה: <span class="en">Billing and Cost Management → Budgets → Create budget</span>.</li>
           <li>בוחרים <b><span class="en">Cost budget</span></b>, תקופה <b>חודשית</b>, וסכום (למשל <span class="en">$10</span>).</li>
           <li>מוסיפים <b><span class="en">alert threshold</span></b> (למשל 80%) עם האימייל שלכם.</li>
           <li>שומרים — תקבלו מייל אם מתקרבים לסכום.</li>
@@ -327,8 +327,8 @@
       <div class="block demo">
         <div class="hd"><span class="badge">הדגמה</span> מאבטחים את החשבון</div>
         <ol class="steps">
-          <li><b>מפעילים <span class="en">MFA</span> ל-<span class="en">root</span>:</b> <span class="en">Account menu</span> → <span class="en">Security credentials</span> → <span class="en">Assign MFA</span> (אפליקציית <span class="en">authenticator</span>).</li>
-          <li><b>יוצרים משתמש <span class="en">IAM</span>:</b> <span class="en">IAM</span> → <span class="en">Users</span> → <span class="en">Create user</span>, עם גישה לקונסולה.</li>
+          <li><b>מפעילים <span class="en">MFA</span> ל-<span class="en">root</span>:</b> <span class="en">Account menu → Security credentials → Assign MFA</span> (אפליקציית <span class="en">authenticator</span>).</li>
+          <li><b>יוצרים משתמש <span class="en">IAM</span>:</b> <span class="en">IAM → Users → Create user</span>, עם גישה לקונסולה.</li>
           <li><b>מצרפים הרשאות</b> דרך <span class="en">Group</span> (למשל מדיניות ניהול לקורס), ומפעילים <span class="en">MFA</span> גם למשתמש.</li>
           <li><b>מתנתקים מ-<span class="en">root</span></b> ונכנסים מחדש כמשתמש ה-<span class="en">IAM</span> — מכאן עובדים.</li>
         </ol>
@@ -378,12 +378,12 @@
         <div class="hd"><span class="badge">הדגמה</span> מקימים שרת <span class="en">EC2</span></div>
         <p class="muted">אשף ההקמה הנוכחי הוא עמוד אחד:</p>
         <ol class="steps">
-          <li><span class="en">EC2</span> → <span class="en">Launch instance</span>; נותנים <b>שם</b> (<code>tasks-api</code>).</li>
+          <li><span class="en">EC2 → Launch instance</span>; נותנים <b>שם</b> (<code>tasks-api</code>).</li>
           <li><b><span class="en">AMI</span>:</b> <span class="en">Amazon Linux 2023</span> (מסומן <span class="en">Free tier eligible</span>).</li>
           <li><b><span class="en">Instance type</span>:</b> <span class="en">t3.micro</span> (או <span class="en">t2.micro</span>).</li>
           <li><b><span class="en">Key pair</span>:</b> יוצרים אחד (או "<span class="en">proceed without</span>" ונשתמש ב-<span class="en">Instance Connect</span>).</li>
           <li><b><span class="en">Network settings</span>:</b> ב-<span class="en">Security Group</span> מאפשרים <span class="en">SSH</span> ומוסיפים <span class="en">Custom TCP 8080</span>.</li>
-          <li><span class="en">Launch instance</span> → ממתינים שהמצב יהיה <span class="en">Running</span>.</li>
+          <li><span class="en">Launch instance</span>, וממתינים שהמצב יהיה <span class="en">Running</span>.</li>
         </ol>
       </div>
     </div>
@@ -395,7 +395,7 @@
       <div class="block demo">
         <div class="hd"><span class="badge">הדגמה</span> מריצים את ה-<span class="en">image</span> על השרת</div>
         <ol class="steps">
-          <li><b>מתחברים:</b> בוחרים את ה-<span class="en">instance</span> → <span class="en">Connect</span> → <span class="en">EC2 Instance Connect</span> → <span class="en">Connect</span> (טרמינל בדפדפן).</li>
+          <li><b>מתחברים:</b> בוחרים את ה-<span class="en">instance → Connect → EC2 Instance Connect → Connect</span> (טרמינל בדפדפן).</li>
           <li><b>מתקינים <span class="en">Docker</span></b> ומפעילים:
 <pre><span class="k">sudo</span> dnf install -y docker
 <span class="k">sudo</span> systemctl enable --now docker</pre></li>
@@ -452,7 +452,7 @@
       <div class="block demo">
         <div class="hd"><span class="badge">הדגמה</span> פונקציית <span class="en">Lambda</span> ראשונה</div>
         <ol class="steps">
-          <li><span class="en">Lambda</span> → <span class="en">Create function</span> → <span class="en">Author from scratch</span>; שם + <span class="en">Runtime: Java 17</span>.</li>
+          <li><span class="en">Lambda → Create function → Author from scratch</span>; שם + <span class="en">Runtime: Java 17</span>.</li>
           <li><b>מעלים</b> את ה-<span class="en">handler</span> המוכן מה-<span class="en">repo</span> (<code>lambda/</code>) — או מתחילים מדוגמה.</li>
           <li><b>יוצרים <span class="en">Test event</span></b> פשוט ולוחצים <span class="en">Test</span>.</li>
           <li><b>צופים בתוצאה ובלוגים</b> ב-<span class="en">CloudWatch</span> — הפונקציה רצה בלי שום שרת שהקמנו.</li>

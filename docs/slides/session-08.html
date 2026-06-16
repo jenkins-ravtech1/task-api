@@ -316,7 +316,7 @@
 | <span class="k">filter</span> status &gt;= 500
 | <span class="k">sort</span> @timestamp <span class="k">desc</span></pre></div>
       </div>
-      <div class="box note"><div class="bt">איך הלוגים מגיעים</div>הקונטיינר על <span class="en">EC2</span> שולח <span class="en">stdout</span> ל-<span class="en">CloudWatch</span> (דרך <span class="en">log driver</span>); <span class="en">Lambda</span> שולח אוטומטית. הכול הוגדר ב-<span class="en">Terraform</span> (מפגש 6).</div>
+      <div class="box note"><div class="bt">איך הלוגים מגיעים</div>הקונטיינר על <span class="en">EC2</span> שולח <span class="en">stdout</span> ל-<span class="en">CloudWatch</span> (דרך <span class="en">log driver</span>); <span class="en">Lambda</span> שולח אוטומטית. הכול הוגדר ב-<span class="en">Terraform</span> (<code>infra/observability.tf</code>, מפגש 8).</div>
     </div>
   </section>
 
@@ -354,7 +354,7 @@
         <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">ערכים מספריים שנמדדים שוב ושוב: כמה בקשות, כמה שגיאות, כמה זמן לקחה תגובה. מציגים אותם בגרפים (<span class="en">dashboard</span>).</p></div>
         <div class="box tech"><div class="bt"><span class="en">RED</span> / <span class="en">USE</span></div><p style="margin:0">מסגרות נפוצות: <b><span class="en">RED</span></b> — <span class="en">Rate</span>, <span class="en">Errors</span>, <span class="en">Duration</span> (לשירותים). <b><span class="en">USE</span></b> — <span class="en">Utilization</span>, <span class="en">Saturation</span>, <span class="en">Errors</span> (למשאבים).</p></div>
       </div>
-      <div class="box note" style="margin-top:14px"><div class="bt">בפרויקט שלנו</div>האפליקציה פולטת <span class="en">metric</span> מותאם (<code>TasksCreated</code>) ו-<span class="en">latency</span> — דרך <span class="en">EMF</span> (הלוגים המובנים הופכים גם למטריקות).</div>
+      <div class="box note" style="margin-top:14px"><div class="bt">בפרויקט שלנו</div>האפליקציה פולטת <span class="en">metric</span> מותאם (<code>TasksCreated</code>) ו-<code>durationMs</code> (latency) — דרך <span class="en">EMF</span> (הלוגים המובנים הופכים גם למטריקות).</div>
     </div>
   </section>
 
@@ -365,7 +365,7 @@
       <h2><span class="en">Dashboards</span> ו-<span class="en">Alarms</span></h2>
       <div class="grid two">
         <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><span class="en">Dashboard</span> = מסך גרפים לתמונת מצב. <span class="en">Alarm</span> = חוק על <span class="en">metric</span> ("אם יש שגיאות 5xx ל-5 דקות") ששולח התראה.</p></div>
-        <div class="box tech"><div class="bt">בפרויקט שלנו</div><p style="margin:0"><span class="en">CloudWatch Alarm</span> על <span class="en">5xx</span> או על שגיאות <span class="en">Lambda</span> → פעולה: פרסום ל-<span class="en">SNS</span> (אותו נושא מהארכיטקטורה) → מייל. הוגדר ב-<span class="en">Terraform</span>.</p></div>
+        <div class="box tech"><div class="bt">בפרויקט שלנו</div><p style="margin:0"><span class="en">CloudWatch Alarm</span> על <span class="en">5xx</span> או על שגיאות <span class="en">Lambda</span> מפעיל פרסום ל-<span class="en">SNS</span> (אותו נושא מהארכיטקטורה), ומשם מייל. הוגדר ב-<span class="en">Terraform</span>.</p></div>
       </div>
       <div class="flow">
         <span class="n">Metric</span><span class="a">→</span>
@@ -382,9 +382,9 @@
       <div class="block demo">
         <div class="hd"><span class="badge">הדגמה</span> <span class="en">metric</span>, <span class="en">dashboard</span> ו-<span class="en">alarm</span></div>
         <ol class="steps">
-          <li><b>צופים ב-<span class="en">metric</span></b> <code>TasksCreated</code> ו-<span class="en">latency</span> ב-<span class="en">CloudWatch → Metrics</span>.</li>
+          <li><b>צופים ב-<span class="en">metric</span></b> <code>TasksCreated</code> ו-<code>durationMs</code> ב-<span class="en">CloudWatch → Metrics</span>.</li>
           <li><b>מוסיפים ל-<span class="en">dashboard</span></b> גרף של בקשות ושגיאות.</li>
-          <li><b>יוצרים <span class="en">alarm</span></b>: <span class="en">5xx &gt; 0</span> ל-5 דקות → פעולה: <span class="en">SNS</span>.</li>
+          <li><b>יוצרים <span class="en">alarm</span></b>: <span class="en">5xx &gt; 0</span> ל-5 דקות, והפעולה: <span class="en">SNS</span>.</li>
           <li><b>מפעילים שגיאה</b> בכוונה (בקשה לא תקינה חוזרת) — וצופים ב-<span class="en">alarm</span> עובר ל-<span class="en">ALARM</span> ובמייל שמגיע.</li>
         </ol>
         <div class="box note"><div class="bt">סגירת מעגל</div>אותו <span class="en">SNS</span> שבנינו במפגש 5 לאירועי משימות — משמש עכשיו גם להתראות תקלה.</div>
@@ -417,14 +417,14 @@
   <section class="slide" data-topic="חלק 4 · Traces">
     <div class="s-wrap">
       <span class="kicker">הגישה העדכנית</span>
-      <h2><span class="en">OpenTelemetry</span> → <span class="en">X-Ray</span></h2>
+      <h2><span class="en">OpenTelemetry → X-Ray</span></h2>
       <div class="grid two">
         <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">מחברים "סוכן" (<span class="en">agent</span>) לאפליקציה <b>בלי לשנות קוד</b>, והוא אוסף <span class="en">traces</span> ושולח אותם ל-<span class="en">X-Ray</span> לצפייה.</p></div>
         <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">ADOT</span> (חבילת <span class="en">OpenTelemetry</span> של <span class="en">AWS</span>) — סוכן <span class="en">Java</span> שמתחבר עם <code>-javaagent</code> ומבצע <span class="en">auto-instrumentation</span> ל-<span class="en">HTTP</span> ולקריאות <span class="en">AWS SDK</span>.</p></div>
       </div>
 <pre><span class="c"># מחברים את הסוכן — אפס שינויי קוד</span>
-<span class="k">java</span> -javaagent:/otel/aws-opentelemetry-agent.jar -jar app.jar
-OTEL_TRACES_EXPORTER=otlp        <span class="c"># שולח ל-X-Ray</span></pre>
+<span class="k">java</span> -javaagent:/opt/aws-opentelemetry-agent.jar -jar app.jar
+OTEL_TRACES_EXPORTER=otlp        <span class="c"># → אוסף ADOT → X-Ray</span></pre>
       <div class="box warn"><div class="bt">עדכני, לא מיושן</div><span class="en">AWS</span> ממליצה היום על <span class="en">OpenTelemetry</span>, וה-<span class="en">X-Ray SDK</span> הישן בדרך ליציאה משימוש. בונוס: אותו סוכן מפעיל גם <span class="en">CloudWatch Application Signals</span> (<span class="en">APM</span>) בהגדרה אחת.</div>
     </div>
   </section>
@@ -479,10 +479,10 @@ OTEL_TRACES_EXPORTER=otlp        <span class="c"># שולח ל-X-Ray</span></pre
       <div class="block demo">
         <div class="hd"><span class="badge">Capstone</span> ריצה מלאה מקצה לקצה</div>
         <ol class="steps">
-          <li><b>דוחפים שינוי</b> ל-<span class="en">main</span> → ה-<span class="en">CD</span> בונה, דוחף ל-<span class="en">ECR</span>, מריץ <span class="en">terraform apply</span> ומפרס (עם אישור).</li>
+          <li><b>דוחפים שינוי</b> ל-<span class="en">main</span>, וה-<span class="en">CD</span> בונה, דוחף ל-<span class="en">ECR</span>, מריץ <span class="en">terraform apply</span> ומפרס (עם אישור).</li>
           <li><b>מייצרים תעבורה</b> אל ה-<span class="en">API</span> הפרוס — יוצרים כמה משימות.</li>
           <li><b><span class="en">Logs</span>:</b> מתשאלים את הבקשות ב-<span class="en">Logs Insights</span>.</li>
-          <li><b><span class="en">Metrics</span>:</b> רואים את הגרפים ב-<span class="en">dashboard</span>; מפעילים שגיאה → <span class="en">alarm</span> + מייל.</li>
+          <li><b><span class="en">Metrics</span>:</b> רואים את הגרפים ב-<span class="en">dashboard</span>; מפעילים שגיאה ומקבלים <span class="en">alarm</span> + מייל.</li>
           <li><b><span class="en">Traces</span>:</b> פותחים ב-<span class="en">X-Ray</span> את השרשרת <span class="en">API → SQS → Lambda</span>.</li>
         </ol>
         <div class="box note"><div class="bt">זהו — סגרתם את המעגל</div>מ-<span class="en">commit</span> ועד <span class="en">trace</span>, אוטומטית ומנוטר. זה <span class="en">DevOps</span>.</div>
@@ -497,9 +497,9 @@ OTEL_TRACES_EXPORTER=otlp        <span class="c"># שולח ל-X-Ray</span></pre
         <div class="hd"><span class="badge">מעבדה + הצגות</span> השלימו את שלב 8</div>
         <ol class="steps">
           <li><b>ודאו לוגים</b> מובנים זורמים ל-<span class="en">CloudWatch</span>, ותשאלו ב-<span class="en">Logs Insights</span>.</li>
-          <li><b>צרו <span class="en">dashboard</span></b> + <span class="en">alarm</span> על <span class="en">5xx</span> → <span class="en">SNS</span>; הפעילו שגיאה ובדקו שההתראה מגיעה.</li>
+          <li><b>צרו <span class="en">dashboard</span></b> + <span class="en">alarm</span> על <span class="en">5xx → SNS</span>; הפעילו שגיאה ובדקו שההתראה מגיעה.</li>
           <li><b>אמתו <span class="en">trace</span></b> מלא ב-<span class="en">X-Ray</span> (<span class="en">API → SQS → Lambda</span>).</li>
-          <li><b>הציגו</b> לכיתה את המערכת שלכם: <span class="en">push</span> → פריסה → לוגים → מטריקה → trace.</li>
+          <li><b>הציגו</b> לכיתה את המערכת שלכם: <span class="en">push</span>, פריסה, לוגים, מטריקה, ו-<span class="en">trace</span>.</li>
         </ol>
         <div class="box note" style="margin-top:6px"><div class="bt">סימן הצלחה</div>אתם מסוגלים לענות על "האם השירות בריא?", "מה נשבר?", ו"איפה הזמן הלך?" — מהנתונים בלבד.</div>
       </div>

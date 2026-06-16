@@ -180,7 +180,7 @@
     <div class="s-wrap">
       <div class="eyebrow">מפגש 7 מתוך 8 · שלב <span class="en">Deploy</span> · 4</div>
       <h1>אספקה רציפה<br><span class="accent">CD: פריסה אוטומטית ל-AWS</span></h1>
-      <p class="sub">יש לנו <span class="en">CI</span>, <span class="en">image</span> ב-<span class="en">ECR</span>, ותשתית כקוד. היום נחבר הכול לצינור אחד: <b><span class="en">push</span> ל-<span class="en">main</span> → בנייה → דחיפה → <span class="en">terraform apply</span> → פריסה</b> — אוטומטית, בלי מפתחות קבועים, עם שער אישור.</p>
+      <p class="sub">יש לנו <span class="en">CI</span>, <span class="en">image</span> ב-<span class="en">ECR</span>, ותשתית כקוד. היום נחבר הכול לצינור אחד: <b><span class="en">push</span> ל-<span class="en">main</span></b> מפעיל בנייה, דחיפה, <span class="en">terraform apply</span> ופריסה — אוטומטית, בלי מפתחות קבועים ועם שער אישור.</p>
       <div class="pills">
         <span class="pill">16:00–19:00</span>
         <span class="pill"><span class="en">CD</span></span>
@@ -390,7 +390,7 @@
     <span class="o">runs-on</span>: ubuntu-latest
     <span class="o">environment</span>: production   <span class="c"># דורש אישור</span>
     <span class="o">steps</span>:
-      - <span class="o">uses</span>: actions/checkout@v5
+      - <span class="o">uses</span>: actions/checkout@v4
       - <span class="o">uses</span>: aws-actions/configure-aws-credentials@v4
         <span class="o">with</span>:
           <span class="o">role-to-assume</span>: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
@@ -407,7 +407,7 @@
 <pre>      - <span class="o">uses</span>: aws-actions/amazon-ecr-login@v2
       - <span class="o">name</span>: Build and push image
         <span class="o">run</span>: |
-          docker build -f docker/Dockerfile -t $ECR_URI:$GITHUB_SHA .
+          docker build --platform linux/amd64 -f docker/Dockerfile -t $ECR_URI:$GITHUB_SHA .
           docker push $ECR_URI:$GITHUB_SHA
       - <span class="o">name</span>: Terraform apply
         <span class="o">run</span>: |
@@ -426,10 +426,13 @@
       <span class="filename">.github/workflows/cd.yml (steps)</span>
 <pre>      - <span class="o">name</span>: Deploy to EC2 (SSM)
         <span class="o">run</span>: |
+          PARAM=$(terraform -chdir=infra output -raw image_tag_parameter)
+          INSTANCE_ID=$(terraform -chdir=infra output -raw instance_id)
+          aws ssm put-parameter --name "$PARAM" --value "$GITHUB_SHA" --type String --overwrite
           aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
             --document-name AWS-RunShellScript \
-            --targets Key=tag:app,Values=tasks-api \
-            --parameters 'commands=["docker pull $ECR_URI:'$GITHUB_SHA'","systemctl restart tasks-api"]'
+            --parameters 'commands=["/usr/local/bin/deploy-app.sh"]'
       - <span class="o">name</span>: Smoke test
         <span class="o">run</span>: ./scripts/smoke-test.sh "$API_URL"   <span class="c"># נכשל אם /health אדום</span></pre>
       <div class="box note"><div class="bt">למה <span class="en">SSM</span> ולא <span class="en">SSH</span></div>פריסה דרך <span class="en">SSM</span> לא דורשת מפתחות <span class="en">SSH</span> בצינור — עקבי עם גישת ה-<span class="en">OIDC</span> ללא מפתחות.</div>
@@ -446,7 +449,7 @@
           <li><b>מגדירים <span class="en">repo variables</span></b> (לא <span class="en">secrets</span>!): <code>AWS_DEPLOY_ROLE_ARN</code>, <code>AWS_REGION</code>.</li>
           <li><b>דוחפים שינוי ל-<span class="en">main</span></b> (או ממזגים <span class="en">PR</span>) — ה-<span class="en">CD</span> מתחיל.</li>
           <li><b>מאשרים</b> את סביבת ה-<span class="en">production</span> (שער האישור).</li>
-          <li><b>צופים</b>: בנייה → דחיפה ל-<span class="en">ECR</span> → <span class="en">apply</span> → פריסה → <span class="en">smoke test</span> ירוק. השירות בענן מעודכן.</li>
+          <li><b>צופים</b>: בנייה → דחיפה ל-<span class="en">ECR → apply</span> → פריסה → <span class="en">smoke test</span> ירוק. השירות בענן מעודכן.</li>
         </ol>
         <div class="box note"><div class="bt">אימות</div><code>curl http://&lt;api_url&gt;/health</code> מראה את הגרסה החדשה (<code>APP_VERSION</code> = ה-<span class="en">commit</span>).</div>
       </div>

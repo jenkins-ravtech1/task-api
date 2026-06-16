@@ -367,9 +367,9 @@
       <span class="kicker">קוד · ה-Dockerfile שלנו</span>
       <h2>אורזים את ה-<span class="en">JAR</span></h2>
       <span class="filename">docker/Dockerfile</span>
-<pre><span class="k">FROM</span> eclipse-temurin:17-jre      <span class="c"># בסיס: Java 17 runtime</span>
+<pre><span class="k">FROM</span> eclipse-temurin:17-jre-alpine   <span class="c"># בסיס: Java 17 runtime (רזה)</span>
 <span class="k">WORKDIR</span> /app
-<span class="k">COPY</span> app/target/tasks-api.jar app.jar   <span class="c"># ה-JAR שבנינו</span>
+<span class="k">COPY</span> app/target/*-shaded.jar app.jar   <span class="c"># ה-JAR שבנינו</span>
 <span class="k">EXPOSE</span> 8080
 <span class="k">ENTRYPOINT</span> [<span class="s">"java"</span>,<span class="s">"-jar"</span>,<span class="s">"app.jar"</span>]</pre>
       <div class="box note"><div class="bt">שני צעדים היום</div>קודם בונים את ה-<span class="en">JAR</span> (<code>mvn package</code>), ואז <code>docker build</code> אורז אותו. <b>במפגש 6</b> נעבור ל-<span class="en">multi-stage build</span> — <span class="en">docker build</span> אחד שבונה גם את ה-<span class="en">JAR</span> וגם מקטין את ה-<span class="en">image</span>.</div>
@@ -402,8 +402,8 @@
           <li><b>גרסת הייחוס של היום:</b>
 <pre><span class="k">git checkout</span> <span class="o">v3-docker</span></pre></li>
           <li><b>בונים את ה-<span class="en">JAR</span></b> ואז את ה-<span class="en">image</span>:
-<pre><span class="k">mvn</span> <span class="o">-pl app -q package</span>
-<span class="k">docker build</span> <span class="o">-f docker/Dockerfile -t tasks-api .</span></pre></li>
+<pre><span class="k">mvn</span> <span class="o">-pl app -am -q package</span>
+<span class="k">docker build</span> <span class="o">--platform linux/amd64 -f docker/Dockerfile -t tasks-api .</span></pre></li>
           <li><b>מריצים</b> וממפים פורט:
 <pre><span class="k">docker run</span> <span class="o">-p 8080:8080 tasks-api</span></pre></li>
           <li><b>בודקים</b> (חלון שני):
@@ -512,7 +512,7 @@
 <pre>      - <span class="o">name</span>: Build and test
         <span class="o">run</span>: mvn -B verify
       - <span class="o">name</span>: Build Docker image
-        <span class="o">run</span>: docker build -f docker/Dockerfile -t tasks-api:${{ github.sha }} .</pre>
+        <span class="o">run</span>: docker build --platform linux/amd64 -f docker/Dockerfile -t tasks-api:${{ github.sha }} .</pre>
       <div class="box note"><div class="bt">בונים, עדיין לא דוחפים</div>ב-<span class="en">CI</span> רק מוודאים שה-<span class="en">image</span> נבנה. הדחיפה ל-<span class="en">registry</span> בענן (<span class="en">ECR</span>) תתווסף ל-<span class="en">CD</span> במפגש 7.</div>
     </div>
   </section>
@@ -523,7 +523,7 @@
       <div class="block lab">
         <div class="hd"><span class="badge">מעבדה</span> בנו את שלב 3 — 25 דקות</div>
         <ol class="steps">
-          <li><b>כתבו</b> את <code>docker/Dockerfile</code> (מהשקופית), ובנו: <code>mvn -pl app package</code> ואז <code>docker build</code>.</li>
+          <li><b>כתבו</b> את <code>docker/Dockerfile</code> (מהשקופית), ובנו: <code>mvn -pl app -am package</code> ואז <code>docker build --platform linux/amd64</code>.</li>
           <li><b>הריצו</b> את הקונטיינר עם <code>-p 8080:8080</code> ובדקו <code>/health</code> ו-<code>POST /tasks</code>.</li>
           <li><b>בדקו לוגים</b> עם <code>docker logs</code>, ונסו <code>docker exec -it</code>.</li>
           <li><b>הריצו עם <span class="en">compose</span>:</b> <code>docker compose ... up --build</code>.</li>

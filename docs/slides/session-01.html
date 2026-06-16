@@ -455,6 +455,31 @@
     </div>
   </section>
 
+  <!-- 16b · WINDOWS SETUP (WSL2) -->
+  <section class="slide" data-topic="התקנה · Windows (WSL2)">
+    <div class="s-wrap">
+      <span class="kicker">לתלמידי Windows · התקנה חד-פעמית</span>
+      <h2>מתקינים <span class="en">WSL2</span> — לינוקס בתוך <span class="en">Windows</span></h2>
+      <p class="muted">המרצה עובד/ת על <span class="en">Mac</span>, וכל הפקודות בקורס הן <span class="en">Linux</span>/<span class="en">Mac</span>. <span class="en">WSL2</span> נותן לכם <span class="en">Linux</span> אמיתי בתוך <span class="en">Windows</span>, כך שכל פקודה שתראו תעבוד אצלכם <b>בדיוק אותו הדבר</b>. כ‑15 דקות, פעם אחת.</p>
+      <div class="card">
+        <ol class="steps">
+          <li><b>פתחו <span class="en">PowerShell</span> כמנהל</b> — חיפוש "<span class="en">PowerShell</span>", קליק ימני, ואז <span class="en">Run as administrator</span>.</li>
+          <li><b>התקינו <span class="en">WSL2</span> + <span class="en">Ubuntu</span></b> בפקודה אחת, ואז <b>הפעילו מחדש</b> את המחשב:
+<pre><span class="k">wsl</span> --install</pre></li>
+          <li><b>אחרי האתחול</b> ייפתח חלון <span class="en">Ubuntu</span> — בחרו <b>שם משתמש וסיסמה</b> (זכרו אותם, צריך ל-<code>sudo</code>).</li>
+          <li><b>עדכנו את המערכת</b> מתוך חלון ה-<span class="en">Ubuntu</span>:
+<pre><span class="k">sudo apt update</span> &amp;&amp; <span class="k">sudo apt upgrade</span> -y</pre></li>
+          <li><b>מכאן עובדים תמיד מחלון ה-<span class="en">Ubuntu</span></b> — לא מ-<span class="en">PowerShell</span>/<span class="en">CMD</span>. כל פקודות הקורס יעבדו כמו אצל המרצה.</li>
+        </ol>
+      </div>
+      <div class="grid two" style="margin-top:14px">
+        <div class="box note"><div class="bt"><span class="en">Docker + VS Code</span></div><b><span class="en">Docker</span>:</b> ב-<span class="en">Docker Desktop</span>, תחת <span class="en">Settings &gt; Resources &gt; WSL Integration</span>, הפעילו עבור <span class="en">Ubuntu</span>.<br><b><span class="en">VS Code</span>:</b> התקינו את התוסף <span class="en">WSL</span> מבית <span class="en">Microsoft</span> (<code>ms-vscode-remote.remote-wsl</code>), ומתוך <span class="en">Ubuntu</span> הריצו <code>code .</code> — העורך והטרמינל ירוצו בלינוקס.<br><b>תוספים שימושיים לקורס</b> (בתוך <span class="en">WSL</span>): <code>vscjava.vscode-java-pack</code> · <code>ms-azuretools.vscode-docker</code> · <code>hashicorp.terraform</code>.</div>
+        <div class="box warn"><div class="bt">שני כללי זהב</div>שמרו קבצים <b>בתוך</b> לינוקס (<code>~/projects</code>, לא <code>/mnt/c</code>) — מהיר יותר. והריצו פעם אחת <code>git config --global core.autocrlf input</code> כדי שסיומות-שורה לא ישברו סקריפטים.</div>
+      </div>
+      <div class="box simple" style="margin-top:12px"><div class="bt">חלופה קלה (לפקודות בסיסיות)</div><span class="en">Git Bash</span> (מגיע עם <span class="en">Git for Windows</span>) מספיק ל-<span class="en">git</span> ולפקודות בסיסיות, אבל <span class="en">WSL2</span> הוא הקרוב ביותר לסביבת המרצה — מומלץ.</div>
+    </div>
+  </section>
+
   <!-- 17 · COMMANDS -->
   <section class="slide" data-topic="חלק 3 · Terminal">
     <div class="s-wrap">
@@ -779,11 +804,11 @@
         <p class="muted"><code>make run</code> עוטף את פקודת ה-<span class="en">Maven</span>/<span class="en">Java</span>.</p></div>
         <div><span class="filename">בדיקות</span>
 <pre><span class="k">make</span> <span class="o">test</span>
-<span class="c"># mvn -pl app test — בדיקות יחידה</span></pre>
+<span class="c"># mvn -pl app -am verify — בדיקות יחידה</span></pre>
         <p class="muted"><span class="en">Maven</span> בונה ובודק; את ה-<span class="en">JAR</span> נארוז ב-<span class="en">Docker</span> במפגש 3.</p></div>
       </div>
       <div class="box note"><div class="bt">מה זה <span class="en">JAR</span>?</div>קובץ אחד שאורז את כל ה-<span class="en">.class</span> — יחידת ההרצה של <span class="en">Java</span>. ה-<span class="en">repo</span> כולל <code>pom.xml</code> ו-<code>Makefile</code> מוכנים.</div>
-      <div class="box warn" style="margin-top:10px"><div class="bt"><code>make</code> ב-Windows</div><span class="en">make</span> אינו מובנה ב-<span class="en">Windows</span>. אפשרויות: <code>winget install GnuWin32.Make</code> (או <span class="en">choco</span>), להריץ מ-<span class="en">WSL</span>/<span class="en">Git Bash</span>, או להפעיל ישירות: <code>mvn -pl app exec:java</code> (במקום <code>make run</code>) ו-<code>mvn -pl app test</code> (במקום <code>make test</code>).</div>
+      <div class="box warn" style="margin-top:10px"><div class="bt"><code>make</code> ב-Windows</div><span class="en">make</span> אינו מובנה ב-<span class="en">Windows</span>. אפשרויות: <code>winget install GnuWin32.Make</code> (או <span class="en">choco</span>), להריץ מ-<span class="en">WSL</span>/<span class="en">Git Bash</span>, או להפעיל ישירות: <code>mvn -pl app -am package</code> ואז <code>java -jar app/target/*-shaded.jar</code> (במקום <code>make run</code>), ו-<code>mvn -pl app -am verify</code> (במקום <code>make test</code>).</div>
     </div>
   </section>
 
@@ -795,7 +820,7 @@
         <ol class="steps">
           <li><b>משיכת הקוד וגרסת מפגש 1:</b>
 <pre><span class="k">git clone</span> <span class="o">https://github.com/jenkins-ravtech1/task-api.git</span>
-<span class="k">cd</span> <span class="o">tasks-api</span>
+<span class="k">cd</span> <span class="o">task-api</span>
 <span class="k">git checkout</span> <span class="o">v1-code</span></pre></li>
           <li><b>הרצת השירות</b> (חלון <span class="en">Terminal</span> אחד):
 <pre><span class="k">make</span> <span class="o">run</span>
@@ -820,12 +845,12 @@
       <div class="block lab">
         <div class="hd"><span class="badge">מעבדה</span> תורכם לבנות את שלב 1 — 25 דקות</div>
         <ol class="steps">
-          <li><b>שכפלו</b> את ה-<span class="en">repo</span>, היכנסו אליו ועברו לגרסה: <code>git checkout v1-code</code>.</li>
+          <li><b>שכפלו</b> את ה-<span class="en">repo</span>, היכנסו אליו ועברו לגרסה: <code>git checkout -b session1 v1-code</code>.</li>
           <li><b>הריצו</b> את ה-<span class="en">Tasks API</span> (<code>make run</code>).</li>
           <li><b>קראו</b> ל-<code>/health</code> ול-<code>/tasks</code> ב-<code>curl</code> ובדפדפן.</li>
           <li><b>צרו</b> שתי משימות עם <code>POST</code> ובדקו שהן חוזרות ב-<code>GET /tasks</code>.</li>
           <li><b>אתגר:</b> שנו את תגובת <code>/health</code> ל-<code>{"status":"UP","by":"your-name"}</code>, הריצו מחדש ואמתו.</li>
-          <li><b>בדיקות + <span class="en">Git</span>:</b> <code>make test</code> → <code>git add .</code> → <code>git commit -m "lab 1"</code> → <code>git push</code>.</li>
+          <li><b>בדיקות + <span class="en">Git</span>:</b> <code>make test → git add . → git commit -m "lab 1" → git push</code>.</li>
         </ol>
         <div class="box note" style="margin-top:6px"><div class="bt">סימן הצלחה</div>השרת רץ, ארבע נקודות הקצה מגיבות, הבדיקות עוברות, והשינוי שלכם נראה ב-<span class="en">GitHub</span>.</div>
       </div>

@@ -260,7 +260,7 @@
       <h2>מה זה <span class="en">CI/CD</span>?</h2>
       <div class="grid two">
         <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><b><span class="en">CI</span></b> (אינטגרציה רציפה) = בכל פעם שמישהו דוחף קוד, מכונה אוטומטית <b>בונה ובודקת</b> אותו — כך תופסים שבירות תוך דקות, לא ימים. <b><span class="en">CD</span></b> (אספקה רציפה) = ממשיכים אוטומטית גם ל<b>פריסה</b> (מפגש 7).</p></div>
-        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">CI</span> מריץ <span class="en">pipeline</span> על כל <span class="en">commit</span>: <span class="en">checkout</span> → <span class="en">build</span> → <span class="en">test</span> (→ <span class="en">lint</span>, <span class="en">scan</span>). מטרה: לשמור את ענף ה-<span class="en">main</span> תמיד "ירוק" — תקין וניתן לשחרור בכל רגע.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">CI</span> מריץ <span class="en">pipeline</span> על כל <span class="en">commit</span>: <span class="en">checkout → build → test</span> (→ <span class="en">lint</span>, <span class="en">scan</span>). מטרה: לשמור את ענף ה-<span class="en">main</span> תמיד "ירוק" — תקין וניתן לשחרור בכל רגע.</p></div>
       </div>
       <div class="box note" style="margin-top:14px"><div class="bt">היום מתמקדים ב-<span class="en">CI</span></div>נבנה את ה-<span class="en">build + test</span> האוטומטי. ה-<span class="en">CD</span> (פריסה אוטומטית) יתווסף במפגש 7, כשכבר יהיה לאן לפרוס.</div>
     </div>
@@ -299,7 +299,7 @@
       <h2><span class="en">Branches</span> (ענפים)</h2>
       <div class="grid two">
         <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><span class="en">branch</span> הוא "קו עבודה" נפרד. עובדים על פיצ׳ר בענף משלו בלי לפגוע ב-<span class="en">main</span> היציב, וממזגים פנימה כשמוכן.</p></div>
-        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">branch</span> הוא מצביע קל-משקל ל-<span class="en">commit</span>. <span class="en">main</span> הוא הענף הראשי. דפוס נפוץ: <span class="en">feature branch</span> קצר → <span class="en">PR</span> → מיזוג ל-<span class="en">main</span>.</p></div>
+        <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0"><span class="en">branch</span> הוא מצביע קל-משקל ל-<span class="en">commit</span>. <span class="en">main</span> הוא הענף הראשי. דפוס נפוץ: <span class="en">feature branch</span> קצר, פותחים <span class="en">PR</span>, וממזגים ל-<span class="en">main</span>.</p></div>
       </div>
 <pre><span class="k">git checkout</span> <span class="o">-b</span> feature/health-message   <span class="c"># ענף חדש</span>
 <span class="c"># ...עורכים ומבצעים commit...</span>
@@ -425,7 +425,7 @@
       <h2><code>uses</code> מול <code>run</code></h2>
       <div class="grid two">
         <div class="card"><h3 style="margin-top:0"><code>uses</code> — פעולה מוכנה</h3>
-<pre>- <span class="o">uses</span>: actions/checkout@v5</pre>
+<pre>- <span class="o">uses</span>: actions/checkout@v4</pre>
         <p style="margin:0">מריץ רכיב מה-<span class="en">Marketplace</span>. <code>actions/checkout</code> מושך את הקוד שלכם ל-<span class="en">runner</span>.</p></div>
         <div class="card"><h3 style="margin-top:0"><code>run</code> — פקודת shell</h3>
 <pre>- <span class="o">run</span>: mvn -B verify</pre>
@@ -503,8 +503,8 @@
       <h2>הצעדים: <span class="en">checkout → Java → verify</span></h2>
       <span class="filename">.github/workflows/ci.yml (steps)</span>
 <pre>    <span class="o">steps</span>:
-      - <span class="o">uses</span>: actions/checkout@v5      <span class="c"># מושך את הקוד</span>
-      - <span class="o">uses</span>: actions/setup-java@v5
+      - <span class="o">uses</span>: actions/checkout@v4      <span class="c"># מושך את הקוד</span>
+      - <span class="o">uses</span>: actions/setup-java@v4
         <span class="o">with</span>:
           <span class="o">distribution</span>: temurin
           <span class="o">java-version</span>: <span class="s">'17'</span>
@@ -529,7 +529,7 @@
 <pre><span class="k">git add</span> <span class="o">.github</span>
 <span class="k">git commit</span> <span class="o">-m</span> <span class="s">"add CI workflow"</span>
 <span class="k">git push</span></pre></li>
-          <li><b>צופים בריצה</b> בלשונית <span class="en">Actions</span> של ה-<span class="en">repo</span> → אמור להפוך לירוק.</li>
+          <li><b>צופים בריצה</b> בלשונית <span class="en">Actions</span> של ה-<span class="en">repo</span> — אמור להפוך לירוק.</li>
         </ol>
       </div>
     </div>
@@ -546,7 +546,7 @@
 <pre><span class="k">git commit</span> <span class="o">-am</span> <span class="s">"break health (demo)"</span>
 <span class="k">git push</span>
 <span class="c"># ה-CI נכשל — אדום, עם הלוג של הבדיקה שנפלה</span></pre></li>
-          <li><b>מתקנים</b> ודוחפים שוב → חוזר לירוק.</li>
+          <li><b>מתקנים</b> ודוחפים שוב, וחוזר לירוק.</li>
         </ol>
         <div class="box note"><div class="bt">זה כל הרעיון</div>הבאג נתפס תוך דקות, אוטומטית, לפני שהגיע ל-<span class="en">main</span> — ולא אצל משתמש.</div>
       </div>
@@ -560,7 +560,7 @@
         <div class="hd"><span class="badge">הדגמה</span> נועלים את <span class="en">main</span> (<span class="en">Branch Protection</span>)</div>
         <p class="muted">בממשק <span class="en">GitHub</span> הנוכחי:</p>
         <ol class="steps">
-          <li><span class="en">Repo</span> → <span class="en">Settings</span> → <span class="en">Branches</span> → <span class="en">Add branch ruleset</span> (או <span class="en">Add rule</span>).</li>
+          <li><span class="en">Repo → Settings → Branches → Add branch ruleset</span> (או <span class="en">Add rule</span>).</li>
           <li>מגדירים את היעד לענף <code>main</code>.</li>
           <li>מסמנים <b><span class="en">Require status checks to pass</span></b> ובוחרים את ה-<span class="en">job</span> שלנו (<code>build-test</code>).</li>
           <li>אופציונלי: <b><span class="en">Require a pull request before merging</span></b> (+ אישור <span class="en">reviewer</span>).</li>
@@ -597,7 +597,7 @@
           <li><b>הוסיפו <span class="en">build badge</span></b> ל-<code>README.md</code> (תג הסטטוס של ה-<span class="en">workflow</span>) — כך רואים אם ה-<span class="en">build</span> ירוק ישר מה-<span class="en">repo</span>.</li>
           <li><b>קריאה:</b> "פירמידת הבדיקות" (<span class="en">unit / integration / e2e</span>) — נשתמש בה בהמשך.</li>
         </ol>
-        <div class="box note" style="margin-top:6px"><div class="bt">טיפ ל-badge</div>ב-<span class="en">GitHub</span>: <span class="en">Actions</span> → בוחרים את ה-<span class="en">workflow</span> → <span class="en">"Create status badge"</span> → מדביקים ל-<code>README</code>.</div>
+        <div class="box note" style="margin-top:6px"><div class="bt">טיפ ל-badge</div>ב-<span class="en">GitHub</span>: <span class="en">Actions</span> → בוחרים את ה-<span class="en">workflow → "Create status badge"</span> → מדביקים ל-<code>README</code>.</div>
       </div>
     </div>
   </section>
