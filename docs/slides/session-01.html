@@ -428,6 +428,7 @@
   <span class="o">-H</span> <span class="s">"Content-Type: application/json"</span> \
   <span class="o">-d</span> <span class="s">'{"title":"Hello"}'</span></pre></li>
         </ol>
+        <div class="box note" style="margin-top:6px"><div class="bt">פקודות רב-שורתיות ב-Windows</div>ה-<code>\</code> בסוף שורה = המשך-שורה ב-<span class="en">bash</span> (<span class="en">WSL</span>/<span class="en">Git Bash</span>). ב-<span class="en">PowerShell</span> השתמשו ב-backtick בסוף שורה, או כתבו את כל הפקודה בשורה אחת.</div>
       </div>
     </div>
   </section>
@@ -450,7 +451,7 @@
         <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0">דרך לתת למחשב פקודות בכתב. נראה מאיים בהתחלה, אבל <b>מהיר, מדויק וניתן לאוטומציה</b> — דברים שאי-אפשר עם עכבר.</p></div>
         <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">ה-<span class="en">shell</span> (<span class="en">bash</span>/<span class="en">zsh</span>) מפרש פקודות. שרתי ענן הם <span class="en">Linux</span> ללא ממשק גרפי — הגישה היחידה היא <span class="en">SSH</span>/<span class="en">SSM</span> ל-<span class="en">shell</span>.</p></div>
       </div>
-      <div class="box warn" style="margin-top:14px"><div class="bt">הערה ל-Windows</div>עבדו עם <span class="en">WSL2</span> (<span class="en">Ubuntu</span>) או <span class="en">Git Bash</span>. ב-<span class="en">macOS</span>/<span class="en">Linux</span> ה-<span class="en">Terminal</span> מובנה.</div>
+      <div class="box warn" style="margin-top:14px"><div class="bt">חשוב לתלמידי Windows</div>הדרך הקלה: התקינו <span class="en">WSL2</span> (<span class="en">Ubuntu</span>) או השתמשו ב-<span class="en">Git Bash</span> — כך <b>כל</b> פקודות ה-<span class="en">Linux</span> בקורס עובדות זהה. לחלופין אפשר <span class="en">PowerShell</span>, ונציג את הפקודות המקבילות היכן שהן שונות.</div>
     </div>
   </section>
 
@@ -469,6 +470,7 @@
         <tr><td><code>echo $VAR</code></td><td>ערך משתנה סביבה</td></tr>
         <tr><td><code>curl</code> / <code>code .</code></td><td>בקשת רשת / פתיחה ב-<span class="en">VS Code</span></td></tr>
       </table>
+      <div class="box note"><div class="bt">ב-Windows (PowerShell)</div>רוב הפקודות זהות כ-<span class="en">aliases</span>: <code>pwd</code>, <code>ls</code>, <code>cd</code>, <code>mkdir</code>, <code>cat</code>. ההבדלים: דגלים (<code>ls</code> במקום <code>ls -la</code>) ומשתני סביבה (<code>$env:VAR</code>). ב-<span class="en">WSL2</span>/<span class="en">Git Bash</span> הכול זהה ל-<span class="en">Linux</span>.</div>
     </div>
   </section>
 
@@ -479,9 +481,9 @@
       <h2>נתיבים, משתני סביבה והרשאות</h2>
       <div class="grid two">
         <div class="card"><h3 style="margin-top:0">נתיבים</h3><p style="margin:0"><b>מוחלט</b> מתחיל ב-<code>/</code>; <b>יחסי</b> ביחס למקום הנוכחי (<code>./src</code>, <code>../</code>); <code>~</code> = תיקיית הבית.</p></div>
-        <div class="card"><h3 style="margin-top:0">משתני סביבה</h3><p style="margin:0">ערכים שהאפליקציה קוראת מהסביבה, למשל <code>APP_PORT</code>. <code>export APP_PORT=8080</code>. כך לא כותבים סודות בקוד.</p></div>
+        <div class="card"><h3 style="margin-top:0">משתני סביבה</h3><p style="margin:0">ערכים שהאפליקציה קוראת מהסביבה, למשל <code>APP_PORT</code>. <span class="en">Linux</span>/<span class="en">Mac</span>: <code>export APP_PORT=8080</code> · <span class="en">PowerShell</span>: <code>$env:APP_PORT="8080"</code>.</p></div>
       </div>
-      <div class="box tech" style="margin-top:14px"><div class="bt">הרשאות</div><p style="margin:0">ב-<span class="en">Linux</span> לכל קובץ הרשאות <span class="en">r/w/x</span>. קובץ מפתח <span class="en">SSH</span> חייב הרשאות מוגבלות (<code>chmod 400 key.pem</code>) — נתקל בזה ב-<span class="en">EC2</span> במפגש 4.</p></div>
+      <div class="box tech" style="margin-top:14px"><div class="bt">הרשאות</div><p style="margin:0">ב-<span class="en">Linux</span> לכל קובץ הרשאות <span class="en">r/w/x</span>. קובץ מפתח <span class="en">SSH</span> חייב הרשאות מוגבלות (<code>chmod 400 key.pem</code>). ב-<span class="en">Windows</span>: <code>icacls</code> או פשוט מ-<span class="en">WSL</span>/<span class="en">Git Bash</span> — נתקל בזה ב-<span class="en">EC2</span> במפגש 4.</p></div>
     </div>
   </section>
 
@@ -490,7 +492,12 @@
     <div class="s-wrap">
       <span class="kicker">התקנת כלים</span>
       <h2>מנהלי חבילות ובדיקת גרסאות</h2>
-      <div class="grid two">
+      <div><span class="filename">Windows (winget) — רוב התלמידים</span>
+<pre><span class="k">winget install</span> <span class="o">EclipseAdoptium.Temurin.17.JDK</span>
+<span class="k">winget install</span> <span class="o">Git.Git</span>
+<span class="k">winget install</span> <span class="o">Docker.DockerDesktop</span>
+<span class="k">winget install</span> <span class="o">Amazon.AWSCLI</span></pre></div>
+      <div class="grid two" style="margin-top:12px">
         <div><span class="filename">macOS (Homebrew)</span>
 <pre><span class="k">brew install</span> <span class="o">git awscli</span>
 <span class="k">brew install --cask</span> <span class="o">docker temurin</span></pre></div>
@@ -498,10 +505,11 @@
 <pre><span class="k">sudo apt update</span>
 <span class="k">sudo apt install</span> <span class="o">git curl</span></pre></div>
       </div>
-      <div class="box note"><div class="bt">תמיד לאמת אחרי התקנה</div>
+      <div class="box note"><div class="bt">תמיד לאמת אחרי התקנה (בכל מערכת)</div>
 <pre><span class="k">java</span> -version   <span class="c"># 17 ומעלה</span>
 <span class="k">git</span> --version
-<span class="k">docker</span> --version</pre></div>
+<span class="k">docker</span> --version
+<span class="k">aws</span> --version</pre></div>
     </div>
   </section>
 
@@ -521,6 +529,7 @@
 <pre><span class="k">echo</span> <span class="s">"hello"</span> > note.txt
 <span class="k">cat</span> <span class="o">note.txt</span></pre></li>
         </ol>
+        <div class="box note" style="margin-top:6px"><div class="bt">ב-Windows</div>ב-<span class="en">WSL2</span>/<span class="en">Git Bash</span> הפקודות זהות בדיוק. ב-<span class="en">PowerShell</span> רובן עובדות כ-<span class="en">aliases</span> (<code>ls</code> במקום <code>ls -la</code>; <code>echo</code> ו-<code>cat</code> עובדים).</div>
       </div>
     </div>
   </section>
@@ -774,6 +783,7 @@
         <p class="muted"><span class="en">Maven</span> בונה ובודק; את ה-<span class="en">JAR</span> נארוז ב-<span class="en">Docker</span> במפגש 3.</p></div>
       </div>
       <div class="box note"><div class="bt">מה זה <span class="en">JAR</span>?</div>קובץ אחד שאורז את כל ה-<span class="en">.class</span> — יחידת ההרצה של <span class="en">Java</span>. ה-<span class="en">repo</span> כולל <code>pom.xml</code> ו-<code>Makefile</code> מוכנים.</div>
+      <div class="box warn" style="margin-top:10px"><div class="bt"><code>make</code> ב-Windows</div><span class="en">make</span> אינו מובנה ב-<span class="en">Windows</span>. אפשרויות: <code>winget install GnuWin32.Make</code> (או <span class="en">choco</span>), להריץ מ-<span class="en">WSL</span>/<span class="en">Git Bash</span>, או להפעיל ישירות: <code>mvn -pl app exec:java</code> (במקום <code>make run</code>) ו-<code>mvn -pl app test</code> (במקום <code>make test</code>).</div>
     </div>
   </section>
 
