@@ -834,6 +834,11 @@
   <span class="o">-H</span> <span class="s">"Content-Type: application/json"</span> \
   <span class="o">-d</span> <span class="s">'{"title":"Learn Docker"}'</span>
 <span class="k">curl</span> <span class="o">localhost:8080/tasks</span>    <span class="c"># עכשיו יש משימה אחת</span></pre></li>
+          <li><b>עדכון משימה</b> (<span class="en">PUT</span>) — קחו <span class="en">id</span> מהקריאה הקודמת, שנו כותרת וסמנו כבוצעה:
+<pre><span class="k">curl</span> <span class="o">-X</span> PUT localhost:8080/tasks/&lt;id&gt; \
+  <span class="o">-H</span> <span class="s">"Content-Type: application/json"</span> \
+  <span class="o">-d</span> <span class="s">'{"title":"Learn Kubernetes","done":true}'</span>
+<span class="k">curl</span> <span class="o">localhost:8080/tasks</span>    <span class="c"># הכותרת עודכנה, done:true</span></pre></li>
           <li><b>בדיקות ועצירה:</b> <code>make test</code> · ואז <kbd>Ctrl</kbd>+<kbd>C</kbd> לעצירה.</li>
         </ol>
       </div>
