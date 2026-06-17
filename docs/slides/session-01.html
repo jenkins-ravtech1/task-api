@@ -161,6 +161,19 @@
     .cover,.divider{color:#000; background:#fff !important}
     .cover h1,.divider h2{color:var(--navy)}
   }
+
+  /* click-to-expand diagram (lightbox) */
+  .zoomable{cursor:zoom-in; transition:filter .15s ease, transform .15s ease}
+  .zoomable:hover{filter:brightness(1.04)}
+  #lightbox{position:fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center;
+    background:rgba(8,16,26,.92); cursor:zoom-out; padding:24px; backdrop-filter:blur(2px)}
+  #lightbox.open{display:flex; animation:fade .2s ease}
+  #lightbox img{max-width:96vw; max-height:92vh; border-radius:10px; box-shadow:0 24px 70px rgba(0,0,0,.55); cursor:default}
+  #lightbox .lb-close{position:absolute; top:16px; right:20px; width:42px; height:42px; border-radius:50%;
+    border:0; background:rgba(255,255,255,.15); color:#fff; font-size:24px; line-height:1; cursor:pointer}
+  #lightbox .lb-close:hover{background:rgba(255,255,255,.28)}
+  #lightbox .lb-hint{position:absolute; bottom:16px; inset-inline:0; text-align:center; color:rgba(255,255,255,.66); font-size:13px}
+  @media print{ #lightbox{display:none !important} .zoomable{cursor:default} }
 </style>
 </head>
 <body>
@@ -683,6 +696,14 @@
         <div class="box simple"><div class="bt">בפשטות</div><p style="margin:0"><b><span class="en">Region</span></b> = אזור גיאוגרפי (פרנקפורט, אירלנד). <b><span class="en">AZ</span></b> = מרכז נתונים בתוך אותו אזור. בוחרים <span class="en">Region</span> קרוב למשתמשים.</p></div>
         <div class="box tech"><div class="bt">לעומק טכני</div><p style="margin:0">כל <span class="en">Region</span> מכילה כמה <span class="en">AZs</span> מבודדות פיזית ומחוברות ברשת מהירה. פריסה על כמה <span class="en">AZs</span> = עמידות (<span class="en">high availability</span>). חלק מהשירותים גלובליים (<span class="en">IAM</span>).</p></div>
       </div>
+      <figure class="diagram" style="margin:14px 0 0; text-align:center">
+        <img class="zoomable" src="images/aws-global-infrastructure.png"
+             alt="AWS Global Infrastructure — Regions, Availability Zones, Data Center Clusters, Global Network"
+             style="max-width:100%; max-height:300px; border-radius:12px; border:1px solid var(--line); box-shadow:0 6px 18px rgba(15,46,77,.18)"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+        <div class="diagram-missing" style="display:none; align-items:center; justify-content:center; min-height:150px; padding:18px; border:2px dashed var(--line); border-radius:12px; color:var(--muted); font-size:14px">חסר קובץ תמונה — שמרו את התרשים בנתיב <code class="en" style="direction:ltr; margin-inline-start:6px">images/aws-global-infrastructure.png</code></div>
+        <figcaption style="margin-top:8px; font-size:13.5px; color:var(--muted)">התשתית הגלובלית של <span class="en">AWS</span> — לחצו על התמונה להגדלה</figcaption>
+      </figure>
       <div class="box warn" style="margin-top:14px"><div class="bt">טיפ מעשי</div>תמיד בדקו באיזה <span class="en">Region</span> אתם (פינה עליונה בקונסולה). נעבוד באותו <span class="en">Region</span> לאורך הקורס.</div>
     </div>
   </section>
@@ -962,6 +983,33 @@
   const start = parseInt((location.hash||'').replace('#',''),10);
   if(!isNaN(start)) i = clamp(start-1);
   render();
+</script>
+
+<div id="lightbox" aria-hidden="true" role="dialog">
+  <button class="lb-close" type="button" aria-label="סגירה" onclick="closeLightbox()">&times;</button>
+  <img alt="">
+  <div class="lb-hint">לחצו במקום ריק או <span class="en">Esc</span> לסגירה</div>
+</div>
+<script>
+  (function(){
+    const lb = document.getElementById('lightbox');
+    const lbImg = lb.querySelector('img');
+    function openLightbox(src, alt){ lbImg.src = src; lbImg.alt = alt || ''; lb.classList.add('open'); lb.setAttribute('aria-hidden','false'); }
+    window.closeLightbox = function(){ lb.classList.remove('open'); lb.setAttribute('aria-hidden','true'); lbImg.removeAttribute('src'); };
+    // open when any zoomable image is clicked
+    document.addEventListener('click', function(e){
+      const img = e.target.closest && e.target.closest('img.zoomable');
+      if(img){ e.preventDefault(); e.stopPropagation(); openLightbox(img.currentSrc || img.src, img.alt); }
+    });
+    // click backdrop closes; click on the image itself does not
+    lb.addEventListener('click', function(e){ if(e.target !== lbImg) closeLightbox(); });
+    // Esc closes; swallow slide-nav keys while open (capture runs before the nav handler)
+    document.addEventListener('keydown', function(e){
+      if(!lb.classList.contains('open')) return;
+      if(e.key === 'Escape' || e.key === 'Esc'){ e.preventDefault(); e.stopImmediatePropagation(); closeLightbox(); }
+      else if(['ArrowLeft','ArrowRight','PageUp','PageDown',' '].indexOf(e.key) !== -1){ e.preventDefault(); e.stopImmediatePropagation(); }
+    }, true);
+  })();
 </script>
 </body>
 </html>
