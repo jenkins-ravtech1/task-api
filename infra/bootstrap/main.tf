@@ -39,7 +39,8 @@ data "aws_caller_identity" "current" {}
 
 # Bucket name must be globally unique, so we append the account id.
 resource "aws_s3_bucket" "state" {
-  bucket = "${var.project_name}-tfstate-${data.aws_caller_identity.current.account_id}"
+  bucket        = "${var.project_name}-tfstate-${data.aws_caller_identity.current.account_id}"
+  force_destroy = true
 
   tags = {
     Project   = var.project_name
