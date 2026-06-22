@@ -39,6 +39,7 @@ public class HealthHandler implements HttpHandler {
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("status", "UP");
+        body.put("by", "yossi");
         body.put("version", cfg.version());
         Http.writeJson(exchange, 200, body);
     }
